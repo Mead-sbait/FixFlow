@@ -1,5 +1,11 @@
-import { Pool } from 'pg'
+import mongoose from 'mongoose'
 import { env } from './env.js'
 
-export const db = new Pool({ connectionString: env.databaseUrl })
+export async function connectDatabase() {
+  if (!env.mongodbUri) throw new Error('MONGODB_URI is required')
+  await mongoose.connect(env.mongodbUri, { serverSelectionTimeoutMS: 5000 })
+}
 
+export async function disconnectDatabase() {
+  await mongoose.disconnect()
+}
