@@ -10,3 +10,13 @@ export const registerSchema = z.object({
       'Password must not exceed 72 bytes',
     ),
 }).strict()
+
+export const loginSchema = z.object({
+  email: z.string().trim().email().toLowerCase(),
+  password: z.string()
+    .min(8)
+    .refine(
+      (value) => Buffer.byteLength(value, 'utf8') <= 72,
+      'Password must not exceed 72 bytes',
+    ),
+}).strict()
