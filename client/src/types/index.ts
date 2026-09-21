@@ -3,9 +3,8 @@ export type IssueStatus = 'open' | 'assigned' | 'in_progress' | 'completed' | 'c
 export type IssuePriority = 'low' | 'medium' | 'high' | 'urgent'
 
 export interface AuthUser {
-  id: number
+  id: string
   name: string
   email: string
   role: UserRole
 }
-
