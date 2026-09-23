@@ -31,6 +31,23 @@ FixFlow/
 
 The client runs at `http://localhost:5173`; the API health check is at `http://localhost:3000/api/health`.
 
+## Admin workspace
+
+The admin dashboard is available at `/admin`. It reads the administrator token from the Redux authentication state and sends it as a bearer token; the API verifies both the token and the `admin` role. During local development, `/admin?preview=1` loads clearly labeled sample data so the team can review the interface before authentication and seeded accounts are connected. Preview mode is disabled in production builds.
+
+The admin API is grouped under `/api/admin`:
+
+| Method | Route | Purpose |
+| --- | --- | --- |
+| `GET` | `/issues` | Paginated issue queue with search, status, priority, category, and technician filters |
+| `GET` | `/stats` | Queue totals and urgent/unassigned counts |
+| `GET` | `/technicians` | Technician choices for assignment |
+| `GET` | `/categories` | Category choices for filtering |
+| `PATCH` | `/issues/:id/assign` | Validate and assign a technician; open issues become assigned |
+| `PATCH` | `/issues/:id/priority` | Update issue priority with model validation |
+
+This feature uses the existing Mongoose models and does not change the shared database schema.
+
 ## Database foundation
 
 Mongoose models in `server/src/models/index.ts` define users, categories, issues, comments, status history, and notifications. MongoDB replaces the SQL design from the original proposal; there are no SQL migrations to run and no existing application data has been migrated.
