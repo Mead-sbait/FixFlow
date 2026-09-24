@@ -149,3 +149,83 @@
         grid-template-columns: 1fr;
     }
 }
+
+.technician-issue-card__link
+{
+    display: inline-block;
+    margin-top: 16px;
+    text-decoration: none;
+    font-weight: 600;
+    color: #17324d;
+}
+
+.technician-issue-card__link:hover
+{
+    text-decoration: underline;
+}
+
+.technician-issue-details
+{
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.technician-issue-details > a
+{
+    width: fit-content;
+    text-decoration: none;
+    font-weight: 600;
+    color: #17324d;
+}
+
+.technician-issue-details > a:hover
+{
+    text-decoration: underline;
+}
+
+.technician-issue-details__header
+{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.technician-issue-details__header h1
+{
+    margin: 0 0 12px;
+}
+
+.technician-issue-details__content
+{
+    display: grid;
+    gap: 18px;
+}
+
+.technician-issue-details__content section
+{
+    padding: 20px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+}
+
+.technician-issue-details__content h2
+{
+    margin-top: 0;
+}
+
+.technician-issue-details__actions button
+{
+    padding: 10px 16px;
+    border: 0;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.technician-issue-details__actions button:disabled
+{
+    cursor: not-allowed;
+    opacity: 0.6;
+}

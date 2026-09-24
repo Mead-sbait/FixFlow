@@ -1,17 +1,20 @@
 import type { IssuePriority, IssueStatus } from '../../types'
 
-export interface IssueReporter {
+export interface IssueReporter 
+{
     id: string
     name: string
     email: string
 }
 
-export interface IssueCategory {
+export interface IssueCategory 
+{
     id: string
     name: string
 }
 
-export interface TechnicianIssue {
+export interface TechnicianIssue 
+{
     id: string
     title: string
     description: string
@@ -21,5 +24,12 @@ export interface TechnicianIssue {
     reporter: IssueReporter | null
     category: IssueCategory | null
     createdAt: string
+    updatedAt: string
+}
+
+export interface TechnicianStatusUpdateResponse
+{
+    id: string
+    status: IssueStatus
     updatedAt: string
 }

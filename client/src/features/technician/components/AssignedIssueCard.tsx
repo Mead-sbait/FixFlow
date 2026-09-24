@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import type { TechnicianIssue } from '../technician.types'
 
 type Props = { issue: TechnicianIssue }
@@ -32,6 +33,10 @@ export function AssignedIssueCard({ issue }: Props) {
                     <strong>Reporter:</strong> {issue.reporter?.name ?? 'Unknown'}
                 </span>
             </div>
+
+            <Link to={`/technician/issues/${issue.id}`} className="technician-issue-card__link">
+                View Details
+            </Link>
         </article>
     )
 }
