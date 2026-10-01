@@ -1,0 +1,231 @@
+.technician-dashboard
+{
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.technician-dashboard__header
+{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+.technician-dashboard__header h1
+{
+    margin: 0 0 6px;
+    font-size: 30px;
+}
+
+.technician-dashboard__header p
+{
+    margin: 0;
+    color: #64748b;
+}
+
+.technician-dashboard__header > span
+{
+    padding: 10px 14px;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    background: #ffffff;
+}
+
+.technician-dashboard__issues
+{
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+}
+
+.technician-issue-card
+{
+    padding: 20px;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    background: #ffffff;
+}
+
+.technician-issue-card__header
+{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.technician-issue-card__header h3
+{
+    margin: 0;
+    font-size: 18px;
+}
+
+.technician-issue-card p
+{
+    margin: 0 0 18px;
+    line-height: 1.6;
+    color: #475569;
+}
+
+.technician-issue-card__details
+{
+    display: grid;
+    gap: 8px;
+    font-size: 14px;
+}
+
+.status
+{
+    padding: 5px 9px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: capitalize;
+}
+
+.status--assigned
+{
+    background: #e0f2fe;
+    color: #0369a1;
+}
+
+.status--in_progress
+{
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.status--completed
+{
+    background: #dcfce7;
+    color: #166534;
+}
+
+.status--open
+{
+    background: #f1f5f9;
+    color: #475569;
+}
+
+.status--cancelled
+{
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.technician-dashboard__empty
+{
+    padding: 40px 20px;
+    text-align: center;
+    border: 1px dashed #cbd5e1;
+    border-radius: 14px;
+    background: #ffffff;
+}
+
+.technician-dashboard__empty h2
+{
+    margin-top: 0;
+}
+
+.technician-dashboard__empty p
+{
+    margin-bottom: 0;
+    color: #64748b;
+}
+
+@media (max-width: 700px)
+{
+    .technician-dashboard__header
+    {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .technician-dashboard__issues
+    {
+        grid-template-columns: 1fr;
+    }
+}
+
+.technician-issue-card__link
+{
+    display: inline-block;
+    margin-top: 16px;
+    text-decoration: none;
+    font-weight: 600;
+    color: #17324d;
+}
+
+.technician-issue-card__link:hover
+{
+    text-decoration: underline;
+}
+
+.technician-issue-details
+{
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.technician-issue-details > a
+{
+    width: fit-content;
+    text-decoration: none;
+    font-weight: 600;
+    color: #17324d;
+}
+
+.technician-issue-details > a:hover
+{
+    text-decoration: underline;
+}
+
+.technician-issue-details__header
+{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.technician-issue-details__header h1
+{
+    margin: 0 0 12px;
+}
+
+.technician-issue-details__content
+{
+    display: grid;
+    gap: 18px;
+}
+
+.technician-issue-details__content section
+{
+    padding: 20px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+}
+
+.technician-issue-details__content h2
+{
+    margin-top: 0;
+}
+
+.technician-issue-details__actions button
+{
+    padding: 10px 16px;
+    border: 0;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.technician-issue-details__actions button:disabled
+{
+    cursor: not-allowed;
+    opacity: 0.6;
+}
