@@ -26,10 +26,27 @@ FixFlow/
 2. Install dependencies: `npm ci` then `npm run install:all`.
 3. Copy `client/.env.example` to `client/.env`, and `server/.env.example` to `server/.env`.
 4. Run a local MongoDB instance or use a MongoDB Atlas cluster. Set `MONGODB_URI` in `server/.env` to your connection string, including the `fixflow` database name. The example targets local MongoDB; it does not install or start it. Set your own `JWT_SECRET` too. Never put database credentials in the client environment.
-5. Seed the default categories: `npm run seed --prefix server`. This can be repeated without duplicating categories.
+5. Seed the default categories: `npm run seed --prefix server`. This can be repeated without duplicating categories. If `ADMIN_EMAIL` and `ADMIN_PASSWORD` are set in `server/.env`, the same command also creates the first admin account (registration only creates normal users). Other admins and technicians are then promoted from the `/admin/users` page.
 6. Start both apps: `npm run dev`. The backend starts listening only after MongoDB connects.
 
 The client runs at `http://localhost:5173`; the API health check is at `http://localhost:3000/api/health`.
+
+## Admin workspace
+
+The admin dashboard is available at `/admin`. It reads the administrator token from the Redux authentication state and sends it as a bearer token; the API verifies both the token and the `admin` role. During local development, `/admin?preview=1` loads clearly labeled sample data so the team can review the interface before authentication and seeded accounts are connected. Preview mode is disabled in production builds.
+
+The admin API is grouped under `/api/admin`:
+
+| Method | Route | Purpose |
+| --- | --- | --- |
+| `GET` | `/issues` | Paginated issue queue with search, status, priority, category, and technician filters |
+| `GET` | `/stats` | Queue totals and urgent/unassigned counts |
+| `GET` | `/technicians` | Technician choices for assignment |
+| `GET` | `/categories` | Category choices for filtering |
+| `PATCH` | `/issues/:id/assign` | Validate and assign a technician; open issues become assigned |
+| `PATCH` | `/issues/:id/priority` | Update issue priority with model validation |
+
+This feature uses the existing Mongoose models and does not change the shared database schema.
 
 ## Database foundation
 
@@ -40,6 +57,10 @@ References use ObjectIds, and API IDs must be strings. Document JSON exposes `id
 MongoDB references do not enforce foreign keys. Feature services must validate referenced records, technician roles, ownership, internal-note visibility, and allowed status transitions. Use `runValidators: true` with update queries. Workflow updates spanning multiple documents should use transactions on Atlas or a local replica set, and emit socket events only after commit. These feature services are not implemented by this skeleton.
 
 Connection reference: https://mongoosejs.com/docs/connections.html
+
+## Real-time events
+
+Socket.IO connections must send the JWT as `auth: { token }` in the client handshake, otherwise the connection is refused. Each user joins a private room and admins also join a shared `admins` room. The server currently emits `issue:assigned` and `issue:updated` to the reporter, the assigned technician and all admins after the database change is committed.
 
 ## Git workflow
 
