@@ -2,6 +2,7 @@ import { Router } from 'express'
 import {
   assignIssue,
   changeIssuePriority,
+  changeIssueStatus,
   changeUserRole,
   getIssues,
   getStats,
@@ -19,6 +20,7 @@ adminRouter.use(requireAdmin)
 adminRouter.get('/issues', getIssues)
 adminRouter.patch('/issues/:id/assign', assignIssue)
 adminRouter.patch('/issues/:id/priority', changeIssuePriority)
+adminRouter.patch('/issues/:id/status', changeIssueStatus)
 adminRouter.get('/technicians', getTechnicians)
 adminRouter.get('/stats', getStats)
 adminRouter.get('/users', getUsers)

@@ -6,12 +6,14 @@ import {
   listTechnicians,
   listUsers,
   updatePriority,
+  updateStatus,
   updateUserRole,
 } from '../services/admin.service.js'
 import {
   assignTechnicianSchema,
   issueListQuerySchema,
   updatePrioritySchema,
+  updateStatusSchema,
   updateUserRoleSchema,
   userListQuerySchema,
 } from '../validators/admin.validator.js'
@@ -130,6 +132,43 @@ export async function changeIssuePriority(req: Request<{ id: string }>, res: Res
   } catch {
     res.status(500).json({
       error: 'Unable to update priority',
+      code: 'INTERNAL_ERROR',
+    })
+  }
+}
+
+export async function changeIssueStatus(req: Request<{ id: string }>, res: Response) {
+  const validation = updateStatusSchema.safeParse(req.body)
+
+  if (!validation.success) {
+    res.status(400).json({
+      error: 'Invalid status',
+      code: 'VALIDATION_ERROR',
+    })
+    return
+  }
+
+  try {
+    const adminId = res.locals.auth.userId
+    const result = await updateStatus(adminId, req.params.id, validation.data.status)
+
+    if (result.type === 'not_found') {
+      res.status(404).json({ error: 'Issue not found', code: 'NOT_FOUND' })
+      return
+    }
+
+    if (result.type === 'invalid_transition') {
+      res.status(409).json({
+        error: `Cannot change status from ${result.currentStatus} to ${validation.data.status}`,
+        code: 'CONFLICT',
+      })
+      return
+    }
+
+    res.status(200).json(result.issue)
+  } catch {
+    res.status(500).json({
+      error: 'Unable to update status',
       code: 'INTERNAL_ERROR',
     })
   }

@@ -25,6 +25,11 @@ export const updatePrioritySchema = z.object({
   priority: z.enum(priorities),
 }).strict()
 
+// admins only cancel or reopen, the technician workflow handles the rest
+export const updateStatusSchema = z.object({
+  status: z.enum(['open', 'cancelled']),
+}).strict()
+
 export const userListQuerySchema = z.object({
   role: z.enum(roles).optional(),
   search: z.string().trim().max(100).optional(),

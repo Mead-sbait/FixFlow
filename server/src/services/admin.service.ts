@@ -47,7 +47,22 @@ function toAdminIssue(issue: InstanceType<typeof Issue>) {
   }
 }
 
-function buildIssueFilter(query: IssueListQuery) {
+// what status an admin request ends up in, or null if the change is not allowed
+export function resolveAdminStatus(
+  current: AdminIssueData['status'],
+  requested: 'open' | 'cancelled',
+  hasTechnician: boolean
+): AdminIssueData['status'] | null {
+  if (requested === 'cancelled') {
+    return closedStatuses.includes(current) ? null : 'cancelled'
+  }
+
+  // reopen: only from a closed state, and keep the technician if there was one
+  if (!closedStatuses.includes(current)) return null
+  return hasTechnician ? 'assigned' : 'open'
+}
+
+export function buildIssueFilter(query: IssueListQuery) {
   const filter: Record<string, unknown> = {}
 
   if (query.status) filter.status = query.status
@@ -275,6 +290,85 @@ export async function updatePriority(issueId: string, priority: AdminIssueData['
   emitIssueUpdated(result)
 
   return result
+}
+
+export async function updateStatus(adminId: string, issueId: string, requested: 'open' | 'cancelled') {
+  if (!isValidObjectId(issueId)) {
+    return { type: 'not_found' } as const
+  }
+
+  const session = await mongoose.startSession()
+
+  try {
+    session.startTransaction()
+
+    const issue = await Issue.findById(issueId).session(session)
+
+    if (!issue) {
+      await session.abortTransaction()
+      return { type: 'not_found' } as const
+    }
+
+    const nextStatus = resolveAdminStatus(issue.status, requested, Boolean(issue.technicianId))
+
+    if (!nextStatus) {
+      await session.abortTransaction()
+      return { type: 'invalid_transition', currentStatus: issue.status } as const
+    }
+
+    const previousStatus = issue.status
+    issue.status = nextStatus
+    await issue.save({ session })
+
+    await IssueStatusHistory.create(
+      [
+        {
+          issueId: issue._id,
+          changedBy: adminId,
+          fromStatus: previousStatus,
+          toStatus: nextStatus,
+        },
+      ],
+      { session }
+    )
+
+    if (issue.technicianId) {
+      await Notification.create(
+        [
+          {
+            userId: issue.technicianId,
+            issueId: issue._id,
+            type: requested === 'cancelled' ? 'issue_cancelled' : 'issue_reopened',
+            message: `"${issue.title}" was ${requested === 'cancelled' ? 'cancelled' : 'reopened'} by an admin`,
+          },
+        ],
+        { session }
+      )
+    }
+
+    await session.commitTransaction()
+  } catch (error) {
+    if (session.inTransaction()) {
+      await session.abortTransaction()
+    }
+    throw error
+  } finally {
+    await session.endSession()
+  }
+
+  const updated = await Issue.findById(issueId)
+    .populate('reporterId', 'name email')
+    .populate('technicianId', 'name email')
+    .populate('categoryId', 'name')
+
+  if (!updated) {
+    return { type: 'not_found' } as const
+  }
+
+  const result = toAdminIssue(updated)
+  emitIssueUpdated(result)
+
+  return { type: 'updated', issue: result } as const
 }
 
 export async function listUsers(query: UserListQuery) {
