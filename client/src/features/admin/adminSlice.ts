@@ -11,6 +11,7 @@ import {
   getTechnicians,
   getUsers,
   updateIssuePriority,
+  updateIssueStatus,
   updateUserRole
 } from './adminApi'
 import type {
@@ -134,6 +135,18 @@ export const changeIssuePriority = createAsyncThunk<
   }
 })
 
+export const changeIssueStatus = createAsyncThunk<
+  AdminIssue,
+  { token: string; issueId: string; status: 'open' | 'cancelled' },
+  { rejectValue: string }
+>('admin/changeStatus', async ({ token, issueId, status }, { rejectWithValue }) => {
+  try {
+    return await updateIssueStatus(token, issueId, status)
+  } catch (error) {
+    return rejectWithValue(errorMessage(error, 'Unable to update status'))
+  }
+})
+
 export const fetchAdminUsers = createAsyncThunk<AdminUser[], string, { state: RootState; rejectValue: string }>(
   'admin/fetchUsers',
   async (token, { getState, rejectWithValue }) => {
@@ -240,6 +253,19 @@ const adminSlice = createSlice({
       .addCase(changeIssuePriority.rejected, (state, action) => {
         state.savingId = null
         state.error = action.payload ?? 'Unable to update priority'
+      })
+
+      .addCase(changeIssueStatus.pending, (state, action) => {
+        state.savingId = action.meta.arg.issueId
+        state.error = null
+      })
+      .addCase(changeIssueStatus.fulfilled, (state, action) => {
+        state.savingId = null
+        replaceIssue(state, action.payload)
+      })
+      .addCase(changeIssueStatus.rejected, (state, action) => {
+        state.savingId = null
+        state.error = action.payload ?? 'Unable to update status'
       })
 
       .addCase(fetchAdminUsers.pending, (state) => {

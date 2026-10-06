@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useCallback, useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import type { AppDispatch, RootState } from '../app/store'
 import { AdminNav } from '../features/admin/components/AdminNav'
@@ -8,6 +8,7 @@ import { StatsCards } from '../features/admin/components/StatsCards'
 import {
   assignIssueTechnician,
   changeIssuePriority,
+  changeIssueStatus,
   clearAdminError,
   fetchAdminIssues,
   fetchAdminLookups,
@@ -15,6 +16,8 @@ import {
   resetFilters,
   setFilters
 } from '../features/admin/adminSlice'
+import type { AdminIssue } from '../features/admin/admin.types'
+import { useAdminSocket } from '../features/admin/useAdminSocket'
 import type { IssuePriority } from '../types'
 import '../features/admin/admin.css'
 
@@ -38,6 +41,16 @@ export function AdminDashboard() {
     }
   }, [dispatch, token, admin.filters])
 
+  // live updates: when anyone changes an issue, reload the list and the counts
+  const refresh = useCallback(() => {
+    if (token) {
+      dispatch(fetchAdminIssues(token))
+      dispatch(fetchAdminStats(token))
+    }
+  }, [dispatch, token])
+
+  useAdminSocket(token, refresh)
+
   if (!token) {
     return <main className="admin-page"><p>Authentication required.</p></main>
   }
@@ -56,6 +69,18 @@ export function AdminDashboard() {
   const handlePriority = async (issueId: string, priority: IssuePriority) => {
     const result = await dispatch(changeIssuePriority({ token, issueId, priority }))
     if (changeIssuePriority.fulfilled.match(result)) {
+      dispatch(fetchAdminStats(token))
+    }
+  }
+
+  const handleStatus = async (issue: AdminIssue, status: 'open' | 'cancelled') => {
+    const question = status === 'cancelled'
+      ? `Cancel "${issue.title}"? The technician will be notified.`
+      : `Reopen "${issue.title}"?`
+    if (!window.confirm(question)) return
+
+    const result = await dispatch(changeIssueStatus({ token, issueId: issue.id, status }))
+    if (changeIssueStatus.fulfilled.match(result)) {
       dispatch(fetchAdminStats(token))
     }
   }
@@ -99,6 +124,7 @@ export function AdminDashboard() {
           savingId={admin.savingId}
           onAssign={handleAssign}
           onPriorityChange={handlePriority}
+          onStatusChange={handleStatus}
         />
       )}
 

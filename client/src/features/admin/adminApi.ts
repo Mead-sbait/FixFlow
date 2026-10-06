@@ -65,6 +65,16 @@ export async function updateIssuePriority(token: string, issueId: string, priori
   return response.data
 }
 
+// admins can only cancel an active issue or reopen a closed one
+export async function updateIssueStatus(token: string, issueId: string, status: 'open' | 'cancelled') {
+  const response = await api.patch<AdminIssue>(
+    `/admin/issues/${issueId}/status`,
+    { status },
+    withToken(token)
+  )
+  return response.data
+}
+
 export async function getUsers(token: string, filters: UserFilters) {
   const response = await api.get<AdminUser[]>('/admin/users', {
     params: cleanParams(filters),

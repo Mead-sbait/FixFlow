@@ -1,10 +1,11 @@
-import { useEffect } from 'react'
+import { useCallback, useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import type { AppDispatch, RootState } from '../app/store'
 import { AdminNav } from '../features/admin/components/AdminNav'
 import { StatsCards } from '../features/admin/components/StatsCards'
 import { fetchAdminStats } from '../features/admin/adminSlice'
 import type { CountByName } from '../features/admin/admin.types'
+import { useAdminSocket } from '../features/admin/useAdminSocket'
 import '../features/admin/admin.css'
 
 function Breakdown({ title, rows, empty }: { title: string; rows: CountByName[]; empty: string }) {
@@ -36,11 +37,17 @@ export function AdminStatistics() {
   const role = useSelector((state: RootState) => state.auth.user?.role)
   const { stats, loadingStats, error } = useSelector((state: RootState) => state.admin)
 
-  useEffect(() => {
+  const loadStats = useCallback(() => {
     if (token) {
       dispatch(fetchAdminStats(token))
     }
   }, [dispatch, token])
+
+  useEffect(() => {
+    loadStats()
+  }, [loadStats])
+
+  useAdminSocket(token, loadStats)
 
   if (!token) {
     return <main className="admin-page"><p>Authentication required.</p></main>

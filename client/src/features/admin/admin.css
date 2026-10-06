@@ -279,9 +279,63 @@
   background: #3b82f6;
 }
 
+.admin-table button.danger {
+  color: #b91c1c;
+  border-color: #fecaca;
+}
+
+.admin-table button.danger:hover {
+  background: #fef2f2;
+}
+
+/* on phones the table turns into stacked cards, one per issue */
 @media (max-width: 700px) {
-  .admin-table th:nth-child(4),
-  .admin-table td:nth-child(4) {
+  .admin-table-wrap {
+    border: 0;
+    background: none;
+  }
+
+  .admin-table thead {
+    display: none;
+  }
+
+  .admin-table,
+  .admin-table tbody,
+  .admin-table tr,
+  .admin-table td {
+    display: block;
+  }
+
+  .admin-table tr {
+    margin-bottom: 12px;
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    background: #fff;
+  }
+
+  .admin-table td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+  }
+
+  .admin-table td::before {
+    content: attr(data-label);
+    flex-shrink: 0;
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+
+  .admin-table td:first-child {
+    display: block;
+  }
+
+  .admin-table td:first-child::before {
     display: none;
   }
 
