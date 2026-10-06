@@ -1,0 +1,292 @@
+.admin-page {
+  max-width: 1120px;
+  margin: 2.5rem auto;
+  padding: 0 1.25rem;
+}
+
+.admin-page h1 {
+  margin: 0 0 4px;
+  font-size: 28px;
+}
+
+.admin-page > p {
+  margin: 0 0 20px;
+  color: #64748b;
+}
+
+.admin-nav {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.admin-nav a {
+  padding: 10px 14px;
+  color: #475569;
+  font-weight: 500;
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+}
+
+.admin-nav a:hover {
+  color: #17324d;
+}
+
+.admin-nav a.active {
+  color: #1d4ed8;
+  border-bottom-color: #1d4ed8;
+}
+
+.admin-error {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 10px 14px;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.admin-error button {
+  border: 0;
+  background: none;
+  color: inherit;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+/* stats cards */
+
+.stats-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.stats-card {
+  padding: 16px 18px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.stats-card span {
+  display: block;
+  color: #64748b;
+  font-size: 13px;
+}
+
+.stats-card strong {
+  display: block;
+  margin-top: 6px;
+  font-size: 28px;
+}
+
+.stats-card--urgent strong {
+  color: #b91c1c;
+}
+
+/* filters */
+
+.issue-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.issue-filters input,
+.issue-filters select,
+.admin-table select {
+  padding: 8px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #fff;
+  font: inherit;
+}
+
+.issue-filters input {
+  flex: 1 1 220px;
+}
+
+.issue-filters button,
+.admin-table button,
+.admin-pagination button {
+  padding: 8px 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #fff;
+  font: inherit;
+  cursor: pointer;
+}
+
+.issue-filters button:hover,
+.admin-table button:hover,
+.admin-pagination button:hover {
+  background: #f1f5f9;
+}
+
+.admin-table button:disabled,
+.admin-pagination button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* table */
+
+.admin-table-wrap {
+  overflow-x: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.admin-table th,
+.admin-table td {
+  padding: 12px 14px;
+  text-align: left;
+  vertical-align: middle;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.admin-table th {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  background: #f8fafc;
+}
+
+.admin-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.admin-table tr.is-saving {
+  opacity: 0.6;
+}
+
+.admin-table .issue-title {
+  display: block;
+  font-weight: 600;
+}
+
+.admin-table .issue-meta {
+  display: block;
+  margin-top: 2px;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.assign-cell {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.admin-empty {
+  padding: 40px;
+  text-align: center;
+  color: #64748b;
+}
+
+.admin-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 14px;
+  color: #64748b;
+  font-size: 14px;
+}
+
+/* badges, same colors as the technician pages */
+
+.badge {
+  display: inline-block;
+  padding: 4px 9px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: capitalize;
+  white-space: nowrap;
+}
+
+.badge--open { background: #f1f5f9; color: #475569; }
+.badge--assigned { background: #e0f2fe; color: #0369a1; }
+.badge--in_progress { background: #fef3c7; color: #92400e; }
+.badge--completed { background: #dcfce7; color: #166534; }
+.badge--cancelled { background: #fee2e2; color: #991b1b; }
+
+.badge--low { background: #f1f5f9; color: #475569; }
+.badge--medium { background: #e0e7ff; color: #3730a3; }
+.badge--high { background: #ffedd5; color: #9a3412; }
+.badge--urgent { background: #fee2e2; color: #991b1b; }
+
+.badge--user { background: #f1f5f9; color: #475569; }
+.badge--technician { background: #e0f2fe; color: #0369a1; }
+.badge--admin { background: #ede9fe; color: #5b21b6; }
+
+/* statistics page */
+
+.stats-breakdown {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.stats-breakdown section {
+  padding: 18px 20px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.stats-breakdown h2 {
+  margin: 0 0 14px;
+  font-size: 17px;
+}
+
+.stats-bar {
+  margin-bottom: 10px;
+  font-size: 14px;
+}
+
+.stats-bar div {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.stats-bar span:last-child {
+  color: #64748b;
+}
+
+.stats-bar i {
+  display: block;
+  height: 8px;
+  border-radius: 4px;
+  background: #3b82f6;
+}
+
+@media (max-width: 700px) {
+  .admin-table th:nth-child(4),
+  .admin-table td:nth-child(4) {
+    display: none;
+  }
+
+  .assign-cell {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
