@@ -1,5 +1,7 @@
 import bcrypt from 'bcrypt'
 import { User } from '../models/index.js'
+import jwt from 'jsonwebtoken'
+import { env } from '../config/env.js'
 
 type RegisterInput = {
   name: string
@@ -47,11 +49,24 @@ export async function loginUser(input: LoginInput) {
   if (!passwordMatches) {
     throw new Error('Invalid email or password')
   }
+  const accessToken = jwt.sign(
+    { role: user.role },
+    env.jwtSecret,
+    {
+      subject: user._id.toString(),
+      expiresIn: '1h',
+      algorithm: 'HS256',
+    }
+  )
 
   return {
-    id: user._id.toString(),
-    name: user.name,
-    email: user.email,
-    role: user.role,
+    accessToken,
+    user: {
+      id: user._id.toString(),
+      name: user.name,
+      email: user.email,
+      role: user.role,
+    },
   }
+ 
 }
