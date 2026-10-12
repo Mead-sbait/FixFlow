@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express'
-import { getAssignedIssues, getTechnicianIssueById, updateTechnicianIssueStatus } from '../services/technician.service.js'
-import { updateTechnicianStatusSchema } from '../validators/technician.validator.js'
+import { getAssignedIssues, getTechnicianIssueById, updateTechnicianIssueStatus, getTechnicianIssueComments, createTechnicianIssueComment } from '../services/technician.service.js'
+import { updateTechnicianStatusSchema, createTechnicianCommentSchema } from '../validators/technician.validator.js'
 
 export async function getTechnicianIssues(_req: Request, res: Response)
 {
@@ -75,5 +75,88 @@ export async function updateTechnicianStatus(req: Request<{ id: string }>, res: 
     catch
     {
         res.status(500).json({ error: 'Unable to update issue status', code: 'INTERNAL_ERROR' })
+    }
+}
+
+// GET comments for a technician issue
+export async function getTechnicianComments(
+    req: Request<{ id: string }>,
+    res: Response
+) {
+    try
+    {
+        const technicianId = res.locals.auth.userId
+        const issueId = req.params.id
+
+        const comments = await getTechnicianIssueComments(
+            technicianId,
+            issueId
+        )
+
+        if (comments === null)
+        {
+            res.status(404).json({
+                error: 'Issue not found',
+                code: 'NOT_FOUND',
+            })
+            return
+        }
+
+        res.status(200).json(comments)
+    }
+    catch
+    {
+        res.status(500).json({
+            error: 'Unable to load comments',
+            code: 'INTERNAL_ERROR',
+        })
+    }
+}
+
+// POST a new comment or internal note
+export async function addTechnicianComment(req: Request<{ id: string }>, res: Response)
+{
+    try
+    {
+        const technicianId = res.locals.auth.userId
+        const issueId = req.params.id
+
+        const validation = createTechnicianCommentSchema.safeParse(req.body)
+
+        if (!validation.success)
+        {
+            res.status(400).json({
+                error: 'Invalid comment data',
+                code: 'VALIDATION_ERROR',
+            })
+            return
+        }
+
+        const { message, isInternal } = validation.data
+
+        const comment = await createTechnicianIssueComment(
+            technicianId,
+            issueId,
+            message,
+            isInternal
+        )
+
+        if (comment === null)
+        {
+            res.status(404).json({
+                error: 'Issue not found',
+                code: 'NOT_FOUND',
+            })
+            return
+        }
+
+        res.status(201).json(comment)
+    }
+    catch
+    {
+        res.status(500).json({
+            error: 'Unable to create comment',
+            code: 'INTERNAL_ERROR',
+        })
     }
 }

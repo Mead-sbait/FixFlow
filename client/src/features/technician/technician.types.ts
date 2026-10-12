@@ -33,3 +33,23 @@ export interface TechnicianStatusUpdateResponse
     status: IssueStatus
     updatedAt: string
 }
+
+export interface TechnicianComment
+{
+    id: string
+    issueId: string
+    author: {
+        id: string
+        name: string
+        role: 'user' | 'technician' | 'admin'
+    } | null
+    message: string
+    isInternal: boolean
+    createdAt: string
+}
+
+export interface CreateTechnicianCommentData
+{
+    message: string
+    isInternal: boolean
+}

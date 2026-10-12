@@ -1,8 +1,10 @@
+
 import { useEffect } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import type { AppDispatch, RootState } from '../app/store'
 import { changeTechnicianIssueStatus, fetchTechnicianIssue } from '../features/technician/technicianSlice'
+import { TechnicianComments } from '../features/technician/components/TechnicianComments'
 import '../features/technician/technician.css'
 
 export function TechnicianIssueDetails() {
@@ -51,12 +53,12 @@ export function TechnicianIssueDetails() {
         return <p>Loading issue...</p>
     }
 
-    if (error)
+    if (error && !selectedIssue)
     {
-        return <p>{error}</p>
+        return <p role="alert">{error}</p>
     }
 
-    if (!selectedIssue)
+    if (!selectedIssue || selectedIssue.id !== id)
     {
         return <p>Issue not found.</p>
     }
@@ -67,9 +69,16 @@ export function TechnicianIssueDetails() {
                 Back to Dashboard
             </Link>
 
+            {error && (
+                <p className="technician-comments__error" role="alert">
+                    {error}
+                </p>
+            )}
+
             <div className="technician-issue-details__header">
                 <div>
                     <h1>{selectedIssue.title}</h1>
+
                     <span className={`status status--${selectedIssue.status}`}>
                         {selectedIssue.status}
                     </span>
@@ -115,13 +124,21 @@ export function TechnicianIssueDetails() {
                     <h2>Workflow</h2>
 
                     {selectedIssue.status === 'assigned' && (
-                        <button type="button" disabled={statusUpdating} onClick={() => changeStatus('in_progress')}>
+                        <button
+                            type="button"
+                            disabled={statusUpdating}
+                            onClick={() => changeStatus('in_progress')}
+                        >
                             {statusUpdating ? 'Updating...' : 'Start Work'}
                         </button>
                     )}
 
                     {selectedIssue.status === 'in_progress' && (
-                        <button type="button" disabled={statusUpdating} onClick={() => changeStatus('completed')}>
+                        <button
+                            type="button"
+                            disabled={statusUpdating}
+                            onClick={() => changeStatus('completed')}
+                        >
                             {statusUpdating ? 'Updating...' : 'Complete Issue'}
                         </button>
                     )}
@@ -130,6 +147,12 @@ export function TechnicianIssueDetails() {
                         <p>This issue has been completed.</p>
                     )}
                 </section>
+
+                <TechnicianComments
+                    key={id}
+                    token={token}
+                    issueId={id!}
+                />
             </div>
         </main>
     )

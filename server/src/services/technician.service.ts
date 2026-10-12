@@ -1,5 +1,5 @@
 import mongoose, { isValidObjectId } from 'mongoose'
-import { Issue, IssueStatusHistory } from '../models/index.js'
+import { Comment, Issue, IssueStatusHistory } from '../models/index.js'
 
 type TechnicianIssueData = {
     id: string
@@ -162,4 +162,96 @@ export async function updateTechnicianIssueStatus(technicianId: string, issueId:
     {
         await session.endSession()
     }
+}
+
+
+type TechnicianCommentData = {
+    id: string
+    userId: {
+        id: string
+        name: string
+        role: 'user' | 'technician' | 'admin'
+    } | null
+    message: string
+    isInternal: boolean
+    createdAt: Date
+}
+
+function formatTechnicianComment(data: TechnicianCommentData, issueId: string) 
+{
+    return {
+        id: data.id,
+        issueId,
+        author: data.userId,
+        message: data.message,
+        isInternal: data.isInternal,
+        createdAt: data.createdAt,
+    }
+}
+
+// Get comments for an assigned issue
+export async function getTechnicianIssueComments(technicianId: string, issueId: string)
+{
+    if (!isValidObjectId(issueId))
+    {
+        return null
+    }
+
+    const issue = await Issue.exists({
+        _id: issueId,
+        technicianId,
+    })
+
+    if (!issue)
+    {
+        return null
+    }
+
+    const comments = await Comment.find({ issueId })
+        .populate('userId', 'name role')
+        .sort({ createdAt: 1 })
+
+    return comments.map((comment) => {
+        const data = comment.toJSON() as unknown as TechnicianCommentData
+
+        return formatTechnicianComment(data, issueId)
+    })
+}
+
+// Add a comment or internal note
+export async function createTechnicianIssueComment(technicianId: string, issueId: string, message: string, isInternal: boolean)
+{
+    if (!isValidObjectId(issueId))
+    {
+        return null
+    }
+
+    const issue = await Issue.exists({
+        _id: issueId,
+        technicianId,
+    })
+
+    if (!issue)
+    {
+        return null
+    }
+
+    const comment = await Comment.create({
+        issueId,
+        userId: technicianId,
+        message,
+        isInternal,
+    })
+
+    const savedComment = await Comment.findById(comment._id)
+        .populate('userId', 'name role')
+
+    if (!savedComment)
+    {
+        throw new Error('Comment not found after creation')
+    }
+
+    const data = savedComment.toJSON() as unknown as TechnicianCommentData
+
+    return formatTechnicianComment(data, issueId)
 }
