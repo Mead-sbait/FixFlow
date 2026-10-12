@@ -1,5 +1,7 @@
 import mongoose, { isValidObjectId } from 'mongoose'
 import { Comment, Issue, IssueStatusHistory } from '../models/index.js'
+import { createNotification } from './notification.service.js'
+import { emitToUser } from '../sockets/emitter.js'
 
 type TechnicianIssueData = {
     id: string
@@ -138,15 +140,48 @@ export async function updateTechnicianIssueStatus(technicianId: string, issueId:
             { session }
         )
 
+
         await session.commitTransaction()
+
+        const updatedIssue = {
+            id: issue.id,
+            status: issue.status,
+            updatedAt: issue.get('updatedAt'),
+        }
+
+        const reporterId = issue.reporterId.toString()
+
+        // Notify the technician about the updated issue
+        emitToUser(technicianId, 'issue:updated', {
+            issueId: issue.id,
+        })
+
+        // Notify the reporter about the updated issue
+        emitToUser(reporterId, 'issue:updated', {
+            issueId: issue.id,
+        })
+
+        // Create a persistent notification for the reporter
+        try
+        {
+            await createNotification({
+                userId: reporterId,
+                issueId: issue.id,
+                type: 'issue_updated',
+                message: `Issue status changed to ${nextStatus.replace('_', ' ')}.`,
+            })
+        }
+        catch (error)
+        {
+            console.error(
+                'Issue updated, but notification creation failed:',
+                error
+            )
+        }
 
         return {
             type: 'updated',
-            issue: {
-                id: issue.id,
-                status: issue.status,
-                updatedAt: issue.get('updatedAt'),
-            },
+            issue: updatedIssue,
         } as const
     }
     catch (error)
@@ -219,6 +254,7 @@ export async function getTechnicianIssueComments(technicianId: string, issueId: 
 }
 
 // Add a comment or internal note
+
 export async function createTechnicianIssueComment(technicianId: string, issueId: string, message: string, isInternal: boolean)
 {
     if (!isValidObjectId(issueId))
@@ -226,16 +262,18 @@ export async function createTechnicianIssueComment(technicianId: string, issueId
         return null
     }
 
-    const issue = await Issue.exists({
+    // Verify that the issue belongs to this technician
+    const issue = await Issue.findOne({
         _id: issueId,
         technicianId,
-    })
+    }).select('reporterId')
 
     if (!issue)
     {
         return null
     }
 
+    // Save the comment in MongoDB
     const comment = await Comment.create({
         issueId,
         userId: technicianId,
@@ -252,6 +290,40 @@ export async function createTechnicianIssueComment(technicianId: string, issueId
     }
 
     const data = savedComment.toJSON() as unknown as TechnicianCommentData
+
+    // Refresh the technician's connected clients
+    emitToUser(technicianId, 'comment:added', {
+        issueId,
+    })
+
+    // Public comments only
+    if (!isInternal)
+    {
+        const reporterId = issue.reporterId.toString()
+
+        // Notify the reporter's connected clients
+        emitToUser(reporterId, 'comment:added', {
+            issueId,
+        })
+
+        // Save a persistent notification for the reporter
+        try
+        {
+            await createNotification({
+                userId: reporterId,
+                issueId,
+                type: 'comment_added',
+                message: 'A new comment was added to your issue.',
+            })
+        }
+        catch (error)
+        {
+            console.error(
+                'Comment saved, but notification creation failed:',
+                error
+            )
+        }
+    }
 
     return formatTechnicianComment(data, issueId)
 }

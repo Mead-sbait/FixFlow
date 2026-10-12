@@ -1,4 +1,4 @@
-import { createAsyncThunk, createSlice } from '@reduxjs/toolkit'
+import { createAsyncThunk, createSlice, type PayloadAction } from '@reduxjs/toolkit'
 import type { TechnicianIssue, TechnicianStatusUpdateResponse } from './technician.types'
 import { getTechnicianIssue, getTechnicianIssues, updateTechnicianStatus } from './technicianApi'
 import { logout, setCredentials } from '../auth/authSlice'
@@ -14,6 +14,8 @@ type TechnicianState = {
     issuesRequestId: string | null
     issueRequestId: string | null
     statusRequestId: string | null
+
+    commentsRevision: Record<string, number>
 }
 
 const initialState: TechnicianState = {
@@ -27,6 +29,8 @@ const initialState: TechnicianState = {
     issuesRequestId: null,
     issueRequestId: null,
     statusRequestId: null,
+
+    commentsRevision: {},
 }
 
 export const fetchTechnicianIssues = createAsyncThunk<TechnicianIssue[], string, { rejectValue: string }>(
@@ -68,7 +72,19 @@ export const changeTechnicianIssueStatus = createAsyncThunk<TechnicianStatusUpda
     },
 )
 
-const technicianSlice = createSlice({ name: 'technician', initialState, reducers: {}, extraReducers: (builder) => {
+const technicianSlice = createSlice({
+    name: 'technician',
+    initialState,
+    reducers: {
+        commentEventReceived(state, action: PayloadAction<string>)
+        {
+            const issueId = action.payload
+
+            state.commentsRevision[issueId] =
+                (state.commentsRevision[issueId] ?? 0) + 1
+        },
+    },
+    extraReducers: (builder) => {
     builder
         .addCase(fetchTechnicianIssues.pending, (state, action) => {
             state.loading = true
@@ -180,4 +196,5 @@ const technicianSlice = createSlice({ name: 'technician', initialState, reducers
     },
 })
 
+export const { commentEventReceived } = technicianSlice.actions
 export default technicianSlice.reducer

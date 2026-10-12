@@ -3,3 +3,8 @@
 body { margin: 0; }
 main { max-width: 960px; margin: 4rem auto; padding: 0 1.25rem; }
 
+.notifications-toolbar {
+    display: flex;
+    justify-content: flex-end;
+    padding: 12px 24px;
+}

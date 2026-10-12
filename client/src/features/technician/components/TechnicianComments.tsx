@@ -1,18 +1,19 @@
 
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
-import {
-    createTechnicianComment,
-    getTechnicianComments,
-} from '../technicianApi'
+import { createTechnicianComment, getTechnicianComments } from '../technicianApi'
 import type { TechnicianComment } from '../technician.types'
+import { useSelector } from 'react-redux'
+import type { RootState } from '../../../app/store'
 
 type Props = {
     token: string
     issueId: string
 }
 
-export function TechnicianComments({ token, issueId }: Props) {
+export function TechnicianComments({ token, issueId }: Props)
+{
+    const commentsRevision = useSelector((state: RootState) => state.technician.commentsRevision[issueId] ?? 0)
     const [comments, setComments] = useState<TechnicianComment[]>([])
     const [message, setMessage] = useState('')
     const [isInternal, setIsInternal] = useState(false)
@@ -50,7 +51,7 @@ export function TechnicianComments({ token, issueId }: Props) {
         return () => {
             active = false
         }
-    }, [token, issueId])
+    }, [token, issueId, commentsRevision])
 
     const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault()
