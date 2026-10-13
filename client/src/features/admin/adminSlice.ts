@@ -44,6 +44,7 @@ type AdminState = {
   issuesRequestId: string | null
   statsRequestId: string | null
   usersRequestId: string | null
+  lookupsRequestId: string | null
 }
 
 export const defaultFilters: IssueFilters = {
@@ -72,7 +73,8 @@ const initialState: AdminState = {
   error: null,
   issuesRequestId: null,
   statsRequestId: null,
-  usersRequestId: null
+  usersRequestId: null,
+  lookupsRequestId: null
 }
 
 function errorMessage(error: unknown, fallback: string) {
@@ -221,11 +223,18 @@ const adminSlice = createSlice({
         state.error = action.payload ?? 'Unable to load issues'
       })
 
+      .addCase(fetchAdminLookups.pending, (state, action) => {
+        state.lookupsRequestId = action.meta.requestId
+      })
       .addCase(fetchAdminLookups.fulfilled, (state, action) => {
+        if (state.lookupsRequestId !== action.meta.requestId) return
+        state.lookupsRequestId = null
         state.technicians = action.payload.technicians
         state.categories = action.payload.categories
       })
       .addCase(fetchAdminLookups.rejected, (state, action) => {
+        if (state.lookupsRequestId !== action.meta.requestId) return
+        state.lookupsRequestId = null
         state.error = action.payload ?? 'Unable to load technicians and categories'
       })
 

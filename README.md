@@ -31,6 +31,8 @@ FixFlow/
 
 The client runs at `http://localhost:5173`; the API health check is at `http://localhost:3000/api/health`.
 
+`npm test` runs the client tests (vitest) and the server tests (node:test). Neither needs MongoDB running.
+
 ## Admin area
 
 The admin pages are `/admin` (issue queue, also reachable as `/admin/issues`), `/admin/users` and `/admin/statistics`. They send the JWT from the Redux auth state as a bearer token. Every admin route checks the token and then looks the account up in MongoDB to confirm it still has the `admin` role.
