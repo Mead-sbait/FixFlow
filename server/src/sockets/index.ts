@@ -1,84 +1,53 @@
 import jwt from 'jsonwebtoken'
-import type { Server, Socket } from 'socket.io'
+import { isValidObjectId } from 'mongoose'
+import type { Server } from 'socket.io'
 import { env } from '../config/env.js'
+import { User } from '../models/index.js'
+import { setSocketServer } from './emitter.js'
 
-type SocketUser = {
-  userId: string
-  role: string
-}
+export function registerSocketHandlers(io: Server) {
+  setSocketServer(io)
 
-let io: Server | null = null
+  io.use(async (socket, next) => {
+    const token: unknown = socket.handshake.auth?.token
 
-function readUser(socket: Socket): SocketUser | null {
-  const token = socket.handshake.auth?.token
-
-  if (typeof token !== 'string' || !env.jwtSecret) {
-    return null
-  }
-
-  try {
-    const payload = jwt.verify(token, env.jwtSecret, { algorithms: ['HS256'] })
-
-    if (typeof payload === 'string' || typeof payload.sub !== 'string') {
-      return null
-    }
-
-    return {
-      userId: payload.sub,
-      role: typeof payload.role === 'string' ? payload.role : 'user',
-    }
-  } catch {
-    return null
-  }
-}
-
-export function registerSocketHandlers(server: Server) {
-  io = server
-
-  server.use((socket, next) => {
-    const user = readUser(socket)
-
-    if (!user) {
-      next(new Error('Authentication required'))
+    if (typeof token !== 'string' || !env.jwtSecret) {
+      next(new Error('UNAUTHORIZED'))
       return
     }
 
-    socket.data.user = user
-    next()
+    try {
+      const payload = jwt.verify(token, env.jwtSecret, { algorithms: ['HS256'] })
+
+      if (typeof payload === 'string' || typeof payload.sub !== 'string' || !isValidObjectId(payload.sub)) {
+        next(new Error('UNAUTHORIZED'))
+        return
+      }
+
+      // the role inside the token can be stale, the database decides which rooms the socket joins
+      const user = await User.findById(payload.sub).select('role')
+
+      if (!user) {
+        next(new Error('UNAUTHORIZED'))
+        return
+      }
+
+      socket.data.userId = payload.sub
+      socket.data.role = user.role
+      next()
+    } catch {
+      next(new Error('UNAUTHORIZED'))
+    }
   })
 
-  server.on('connection', (socket) => {
-    const user = socket.data.user as SocketUser
+  io.on('connection', (socket) => {
+    const userId = socket.data.userId as string
+    const role = socket.data.role as string
 
-    // each user has a private room, admins also share one so they see everything
-    socket.join(`user:${user.userId}`)
-    if (user.role === 'admin') {
+    // private room per user, plus a shared room for admins
+    socket.join(`user:${userId}`)
+    if (role === 'admin') {
       socket.join('admins')
     }
-
-    socket.on('disconnect', () => undefined)
   })
-}
-
-type IssueEvent = {
-  id: string
-  reporter: { id: string } | null
-  technician: { id: string } | null
-}
-
-function roomsFor(issue: IssueEvent) {
-  const rooms = ['admins']
-
-  if (issue.reporter) rooms.push(`user:${issue.reporter.id}`)
-  if (issue.technician) rooms.push(`user:${issue.technician.id}`)
-
-  return rooms
-}
-
-export function emitIssueAssigned(issue: IssueEvent) {
-  io?.to(roomsFor(issue)).emit('issue:assigned', issue)
-}
-
-export function emitIssueUpdated(issue: IssueEvent) {
-  io?.to(roomsFor(issue)).emit('issue:updated', issue)
 }

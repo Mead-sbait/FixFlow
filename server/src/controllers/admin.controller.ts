@@ -121,14 +121,22 @@ export async function changeIssuePriority(req: Request<{ id: string }>, res: Res
   }
 
   try {
-    const issue = await updatePriority(req.params.id, validation.data.priority)
+    const result = await updatePriority(req.params.id, validation.data.priority)
 
-    if (!issue) {
+    if (result.type === 'not_found') {
       res.status(404).json({ error: 'Issue not found', code: 'NOT_FOUND' })
       return
     }
 
-    res.status(200).json(issue)
+    if (result.type === 'closed') {
+      res.status(409).json({
+        error: `Cannot change the priority of a ${result.status} issue`,
+        code: 'CONFLICT',
+      })
+      return
+    }
+
+    res.status(200).json(result.issue)
   } catch {
     res.status(500).json({
       error: 'Unable to update priority',

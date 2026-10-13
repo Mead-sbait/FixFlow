@@ -1,6 +1,6 @@
 import mongoose, { isValidObjectId } from 'mongoose'
 import { Category, Issue, IssueStatusHistory, Notification, User } from '../models/index.js'
-import { emitIssueAssigned, emitIssueUpdated } from '../sockets/index.js'
+import { emitToAdmins, emitToUser, syncRoleRooms } from '../sockets/emitter.js'
 import type { IssueListQuery, UserListQuery } from '../validators/admin.validator.js'
 
 type PersonRef = {
@@ -21,6 +21,15 @@ type AdminIssueData = {
   categoryId: { id: string; name: string } | null
   createdAt: Date
   updatedAt: Date
+}
+
+type AdminIssue = ReturnType<typeof toAdminIssue>
+
+type PendingNotification = {
+  userId: mongoose.Types.ObjectId
+  issueId: mongoose.Types.ObjectId
+  type: string
+  message: string
 }
 
 const closedStatuses: AdminIssueData['status'][] = ['completed', 'cancelled']
@@ -44,6 +53,44 @@ function toAdminIssue(issue: InstanceType<typeof Issue>) {
     category: data.categoryId,
     createdAt: data.createdAt,
     updatedAt: data.updatedAt,
+  }
+}
+
+function findIssueWithRefs(issueId: string) {
+  return Issue.findById(issueId)
+    .populate('reporterId', 'name email')
+    .populate('technicianId', 'name email')
+    .populate('categoryId', 'name')
+}
+
+// admins, the reporter and the technician (plus anyone extra, e.g. a technician who was just removed)
+function emitIssueEvent(event: 'issue:assigned' | 'issue:updated', issue: AdminIssue, extraUserIds: string[] = []) {
+  const payload = { issueId: issue.id }
+  emitToAdmins(event, payload)
+
+  const userIds = new Set(extraUserIds)
+  if (issue.reporter) userIds.add(issue.reporter.id)
+  if (issue.technician) userIds.add(issue.technician.id)
+
+  for (const userId of userIds) {
+    emitToUser(userId, event, payload)
+  }
+}
+
+// notifications are written inside the transaction and only announced once it is committed
+async function saveNotifications(pending: PendingNotification[], session: mongoose.ClientSession) {
+  if (pending.length === 0) return []
+  // mongoose needs ordered: true to insert more than one document inside a session
+  const created = await Notification.create(pending.map((item) => ({ ...item, isRead: false })), { session, ordered: true })
+  return created.map((notification) => ({
+    userId: notification.userId.toString(),
+    notificationId: notification._id.toString(),
+  }))
+}
+
+function announceNotifications(saved: { userId: string; notificationId: string }[]) {
+  for (const item of saved) {
+    emitToUser(item.userId, 'notification:new', { notificationId: item.notificationId })
   }
 }
 
@@ -190,6 +237,9 @@ export async function assignTechnician(adminId: string, issueId: string, technic
   }
 
   const session = await mongoose.startSession()
+  let saved: { userId: string; notificationId: string }[] = []
+  let previousTechnicianId: string | null = null
+  let changed = false
 
   try {
     session.startTransaction()
@@ -206,42 +256,58 @@ export async function assignTechnician(adminId: string, issueId: string, technic
       return { type: 'closed', status: issue.status } as const
     }
 
-    const previousStatus = issue.status
+    if (issue.technicianId && issue.technicianId.equals(technician._id)) {
+      // already assigned to this technician, nothing to do
+      await session.abortTransaction()
+    } else {
+      changed = true
+      const previousStatus = issue.status
+      const previous = issue.technicianId
+      previousTechnicianId = previous ? previous.toString() : null
 
-    issue.technicianId = technician._id
-    if (issue.status === 'open') {
-      issue.status = 'assigned'
-    }
+      issue.technicianId = technician._id
+      if (issue.status === 'open') {
+        issue.status = 'assigned'
+      }
 
-    await issue.save({ session })
+      await issue.save({ session })
 
-    if (previousStatus !== issue.status) {
-      await IssueStatusHistory.create(
-        [
-          {
-            issueId: issue._id,
-            changedBy: adminId,
-            fromStatus: previousStatus,
-            toStatus: issue.status,
-          },
-        ],
-        { session }
-      )
-    }
+      if (previousStatus !== issue.status) {
+        await IssueStatusHistory.create(
+          [
+            {
+              issueId: issue._id,
+              changedBy: adminId,
+              fromStatus: previousStatus,
+              toStatus: issue.status,
+            },
+          ],
+          { session }
+        )
+      }
 
-    await Notification.create(
-      [
+      const pending: PendingNotification[] = [
         {
           userId: technician._id,
           issueId: issue._id,
           type: 'issue_assigned',
           message: `You have been assigned to "${issue.title}"`,
         },
-      ],
-      { session }
-    )
+      ]
 
-    await session.commitTransaction()
+      // the technician who had it before should know it moved
+      if (previous) {
+        pending.push({
+          userId: previous,
+          issueId: issue._id,
+          type: 'issue_unassigned',
+          message: `"${issue.title}" was reassigned to ${technician.name}`,
+        })
+      }
+
+      saved = await saveNotifications(pending, session)
+      await session.commitTransaction()
+    }
   } catch (error) {
     if (session.inTransaction()) {
       await session.abortTransaction()
@@ -251,10 +317,7 @@ export async function assignTechnician(adminId: string, issueId: string, technic
     await session.endSession()
   }
 
-  const updated = await Issue.findById(issueId)
-    .populate('reporterId', 'name email')
-    .populate('technicianId', 'name email')
-    .populate('categoryId', 'name')
+  const updated = await findIssueWithRefs(issueId)
 
   if (!updated) {
     return { type: 'not_found' } as const
@@ -263,33 +326,39 @@ export async function assignTechnician(adminId: string, issueId: string, technic
   const result = toAdminIssue(updated)
 
   // only emit after the transaction is committed
-  emitIssueAssigned(result)
+  if (changed) {
+    emitIssueEvent('issue:assigned', result, previousTechnicianId ? [previousTechnicianId] : [])
+    announceNotifications(saved)
+  }
 
   return { type: 'assigned', issue: result } as const
 }
 
 export async function updatePriority(issueId: string, priority: AdminIssueData['priority']) {
   if (!isValidObjectId(issueId)) {
-    return null
+    return { type: 'not_found' } as const
   }
 
-  const issue = await Issue.findByIdAndUpdate(
-    issueId,
-    { priority },
-    { new: true, runValidators: true }
-  )
-    .populate('reporterId', 'name email')
-    .populate('technicianId', 'name email')
-    .populate('categoryId', 'name')
+  const issue = await findIssueWithRefs(issueId)
 
   if (!issue) {
-    return null
+    return { type: 'not_found' } as const
+  }
+
+  // the frontend disables this for closed issues, the backend has to refuse it too
+  if (closedStatuses.includes(issue.status)) {
+    return { type: 'closed', status: issue.status } as const
+  }
+
+  if (issue.priority !== priority) {
+    issue.priority = priority
+    await issue.save()
   }
 
   const result = toAdminIssue(issue)
-  emitIssueUpdated(result)
+  emitIssueEvent('issue:updated', result)
 
-  return result
+  return { type: 'updated', issue: result } as const
 }
 
 export async function updateStatus(adminId: string, issueId: string, requested: 'open' | 'cancelled') {
@@ -298,6 +367,7 @@ export async function updateStatus(adminId: string, issueId: string, requested: 
   }
 
   const session = await mongoose.startSession()
+  let saved: { userId: string; notificationId: string }[] = []
 
   try {
     session.startTransaction()
@@ -332,20 +402,26 @@ export async function updateStatus(adminId: string, issueId: string, requested: 
       { session }
     )
 
+    const word = requested === 'cancelled' ? 'cancelled' : 'reopened'
+    const pending: PendingNotification[] = [
+      {
+        userId: issue.reporterId,
+        issueId: issue._id,
+        type: `issue_${word}`,
+        message: `Your issue "${issue.title}" was ${word}`,
+      },
+    ]
+
     if (issue.technicianId) {
-      await Notification.create(
-        [
-          {
-            userId: issue.technicianId,
-            issueId: issue._id,
-            type: requested === 'cancelled' ? 'issue_cancelled' : 'issue_reopened',
-            message: `"${issue.title}" was ${requested === 'cancelled' ? 'cancelled' : 'reopened'} by an admin`,
-          },
-        ],
-        { session }
-      )
+      pending.push({
+        userId: issue.technicianId,
+        issueId: issue._id,
+        type: `issue_${word}`,
+        message: `"${issue.title}" was ${word} by an admin`,
+      })
     }
 
+    saved = await saveNotifications(pending, session)
     await session.commitTransaction()
   } catch (error) {
     if (session.inTransaction()) {
@@ -356,17 +432,15 @@ export async function updateStatus(adminId: string, issueId: string, requested: 
     await session.endSession()
   }
 
-  const updated = await Issue.findById(issueId)
-    .populate('reporterId', 'name email')
-    .populate('technicianId', 'name email')
-    .populate('categoryId', 'name')
+  const updated = await findIssueWithRefs(issueId)
 
   if (!updated) {
     return { type: 'not_found' } as const
   }
 
   const result = toAdminIssue(updated)
-  emitIssueUpdated(result)
+  emitIssueEvent('issue:updated', result)
+  announceNotifications(saved)
 
   return { type: 'updated', issue: result } as const
 }
@@ -406,6 +480,9 @@ export async function updateUserRole(adminId: string, userId: string, role: 'use
   if (!user) {
     return { type: 'not_found' } as const
   }
+
+  // if they are connected right now, move them in or out of the admins room immediately
+  syncRoleRooms(userId, role)
 
   return { type: 'updated', user: user.toJSON() } as const
 }
