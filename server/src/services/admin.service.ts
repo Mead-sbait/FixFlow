@@ -34,6 +34,12 @@ type PendingNotification = {
 
 const closedStatuses: AdminIssueData['status'][] = ['completed', 'cancelled']
 
+// ObjectIds are hex, so "ABC..." and "abc..." are the same account; never compare them as plain strings
+export function isSameAccount(a: string, b: string) {
+  if (!isValidObjectId(a) || !isValidObjectId(b)) return false
+  return new mongoose.Types.ObjectId(a).equals(new mongoose.Types.ObjectId(b))
+}
+
 function escapeRegex(text: string) {
   return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
@@ -467,7 +473,7 @@ export async function updateUserRole(adminId: string, userId: string, role: 'use
     return { type: 'not_found' } as const
   }
 
-  if (userId === adminId) {
+  if (isSameAccount(userId, adminId)) {
     return { type: 'own_account' } as const
   }
 
@@ -482,7 +488,8 @@ export async function updateUserRole(adminId: string, userId: string, role: 'use
   }
 
   // if they are connected right now, move them in or out of the admins room immediately
-  syncRoleRooms(userId, role)
+  // (use the stored id, not the one from the URL, so the room name always matches)
+  syncRoleRooms(user._id.toString(), role)
 
   return { type: 'updated', user: user.toJSON() } as const
 }

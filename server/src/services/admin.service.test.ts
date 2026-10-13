@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { buildIssueFilter, resolveAdminStatus } from './admin.service.js'
+import { buildIssueFilter, isSameAccount, resolveAdminStatus } from './admin.service.js'
 import { assignTechnicianSchema, issueListQuerySchema } from '../validators/admin.validator.js'
 
 const techId = '507f1f77bcf86cd799439011'
@@ -35,6 +35,13 @@ test('assignment body needs a real technician id', () => {
   assert.equal(assignTechnicianSchema.safeParse({ technicianId: techId }).success, true)
   assert.equal(assignTechnicianSchema.safeParse({ technicianId: 'nora' }).success, false)
   assert.equal(assignTechnicianSchema.safeParse({ technicianId: techId, status: 'completed' }).success, false)
+})
+
+test('an uppercase spelling of the same id still counts as the same account', () => {
+  assert.equal(isSameAccount(techId, techId), true)
+  assert.equal(isSameAccount(techId.toUpperCase(), techId), true)
+  assert.equal(isSameAccount(techId, '507f1f77bcf86cd799439012'), false)
+  assert.equal(isSameAccount('not-an-id', techId), false)
 })
 
 test('admin can only cancel active issues and reopen closed ones', () => {

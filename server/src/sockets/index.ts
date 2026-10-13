@@ -3,7 +3,7 @@ import { isValidObjectId } from 'mongoose'
 import type { Server } from 'socket.io'
 import { env } from '../config/env.js'
 import { User } from '../models/index.js'
-import { setSocketServer } from './emitter.js'
+import { setSocketServer, userRoom } from './emitter.js'
 
 export function registerSocketHandlers(io: Server) {
   setSocketServer(io)
@@ -32,7 +32,7 @@ export function registerSocketHandlers(io: Server) {
         return
       }
 
-      socket.data.userId = payload.sub
+      socket.data.userId = user._id.toString()
       socket.data.role = user.role
       next()
     } catch {
@@ -45,7 +45,7 @@ export function registerSocketHandlers(io: Server) {
     const role = socket.data.role as string
 
     // private room per user, plus a shared room for admins
-    socket.join(`user:${userId}`)
+    socket.join(userRoom(userId))
     if (role === 'admin') {
       socket.join('admins')
     }

@@ -15,8 +15,14 @@ export function setSocketServer(server: Server) {
   io = server
 }
 
+// room names are built from ObjectId strings, which are always lowercase hex when they come
+// from the database; lowercase here too so an uppercase id from a request hits the same room
+export function userRoom(userId: string) {
+  return `user:${userId.toLowerCase()}`
+}
+
 export function emitToUser<Event extends keyof SocketEvents>(userId: string, event: Event, payload: SocketEvents[Event]) {
-  io?.to(`user:${userId}`).emit(event, payload)
+  io?.to(userRoom(userId)).emit(event, payload)
 }
 
 export function emitToAdmins<Event extends keyof SocketEvents>(event: Event, payload: SocketEvents[Event]) {
@@ -28,8 +34,8 @@ export function syncRoleRooms(userId: string, role: string) {
   if (!io) return
 
   if (role === 'admin') {
-    io.in(`user:${userId}`).socketsJoin('admins')
+    io.in(userRoom(userId)).socketsJoin('admins')
   } else {
-    io.in(`user:${userId}`).socketsLeave('admins')
+    io.in(userRoom(userId)).socketsLeave('admins')
   }
 }
