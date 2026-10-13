@@ -40,6 +40,10 @@ type AdminState = {
   // id of the issue or user currently being saved, so only that row is disabled
   savingId: string | null
   error: string | null
+  // ids of the latest requests, so an older response that arrives late cannot overwrite newer data
+  issuesRequestId: string | null
+  statsRequestId: string | null
+  usersRequestId: string | null
 }
 
 export const defaultFilters: IssueFilters = {
@@ -65,7 +69,10 @@ const initialState: AdminState = {
   loadingStats: false,
   loadingUsers: false,
   savingId: null,
-  error: null
+  error: null,
+  issuesRequestId: null,
+  statsRequestId: null,
+  usersRequestId: null
 }
 
 function errorMessage(error: unknown, fallback: string) {
@@ -195,17 +202,22 @@ const adminSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addCase(fetchAdminIssues.pending, (state) => {
+      .addCase(fetchAdminIssues.pending, (state, action) => {
         state.loadingIssues = true
         state.error = null
+        state.issuesRequestId = action.meta.requestId
       })
       .addCase(fetchAdminIssues.fulfilled, (state, action) => {
+        if (state.issuesRequestId !== action.meta.requestId) return
         state.loadingIssues = false
+        state.issuesRequestId = null
         state.issues = action.payload.items
         state.pagination = action.payload.pagination
       })
       .addCase(fetchAdminIssues.rejected, (state, action) => {
+        if (state.issuesRequestId !== action.meta.requestId) return
         state.loadingIssues = false
+        state.issuesRequestId = null
         state.error = action.payload ?? 'Unable to load issues'
       })
 
@@ -217,15 +229,20 @@ const adminSlice = createSlice({
         state.error = action.payload ?? 'Unable to load technicians and categories'
       })
 
-      .addCase(fetchAdminStats.pending, (state) => {
+      .addCase(fetchAdminStats.pending, (state, action) => {
         state.loadingStats = true
+        state.statsRequestId = action.meta.requestId
       })
       .addCase(fetchAdminStats.fulfilled, (state, action) => {
+        if (state.statsRequestId !== action.meta.requestId) return
         state.loadingStats = false
+        state.statsRequestId = null
         state.stats = action.payload
       })
       .addCase(fetchAdminStats.rejected, (state, action) => {
+        if (state.statsRequestId !== action.meta.requestId) return
         state.loadingStats = false
+        state.statsRequestId = null
         state.error = action.payload ?? 'Unable to load statistics'
       })
 
@@ -268,16 +285,21 @@ const adminSlice = createSlice({
         state.error = action.payload ?? 'Unable to update status'
       })
 
-      .addCase(fetchAdminUsers.pending, (state) => {
+      .addCase(fetchAdminUsers.pending, (state, action) => {
         state.loadingUsers = true
         state.error = null
+        state.usersRequestId = action.meta.requestId
       })
       .addCase(fetchAdminUsers.fulfilled, (state, action) => {
+        if (state.usersRequestId !== action.meta.requestId) return
         state.loadingUsers = false
+        state.usersRequestId = null
         state.users = action.payload
       })
       .addCase(fetchAdminUsers.rejected, (state, action) => {
+        if (state.usersRequestId !== action.meta.requestId) return
         state.loadingUsers = false
+        state.usersRequestId = null
         state.error = action.payload ?? 'Unable to load users'
       })
 
