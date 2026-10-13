@@ -1,3 +1,4 @@
+import { isValidObjectId } from 'mongoose'
 import { Category, Issue } from '../models/index.js'
 import { emitToAdmins } from '../sockets/emitter.js'
 
@@ -35,4 +36,18 @@ export async function createIssue(
   emitToAdmins('issue:created', { issueId: issue._id.toString() })
 
   return { type: 'created', issue: issue.toJSON() } as const
+}
+
+export async function getUserIssues(reporterId: string) {
+  const issues = await Issue.find({ reporterId })
+    .sort({ createdAt: -1, _id: -1 })
+
+  return issues.map((issue) => issue.toJSON())
+}
+
+export async function getUserIssueById(reporterId: string, issueId: string) {
+  if (!isValidObjectId(issueId)) return null
+
+  const issue = await Issue.findOne({ _id: issueId, reporterId })
+  return issue ? issue.toJSON() : null
 }
