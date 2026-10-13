@@ -1,6 +1,14 @@
 import type { Request, Response } from 'express'
 import { createIssueSchema } from '../validators/issue.validator.js'
-import { createIssue, getUserIssues, getUserIssueById } from '../services/issue.service.js'
+import { createIssue, getUserIssues, getUserIssueById, getIssueCategories } from '../services/issue.service.js'
+
+export async function listIssueCategories(_req: Request, res: Response) {
+  try {
+    res.status(200).json(await getIssueCategories())
+  } catch {
+    res.status(500).json({ error: 'Unable to load categories', code: 'INTERNAL_ERROR' })
+  }
+}
 
 export async function createUserIssue(req: Request, res: Response) {
   const reporterId = res.locals.auth?.userId

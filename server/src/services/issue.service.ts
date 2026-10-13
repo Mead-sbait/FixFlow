@@ -41,6 +41,11 @@ export async function getUserIssues(reporterId: string) {
   return issues.map((issue) => issue.toJSON())
 }
 
+export async function getIssueCategories() {
+  const categories = await Category.find().select('_id name').sort({ name: 1 })
+  return categories.map((category) => ({ id: category._id.toString(), name: category.name }))
+}
+
 export async function getUserIssueById(reporterId: string, issueId: string) {
   if (!isValidObjectId(issueId)) return null
 

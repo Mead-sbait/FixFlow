@@ -8,3 +8,13 @@ export interface AuthUser {
   email: string
   role: UserRole
 }
+
+export interface UserIssue {
+  id: string
+  title: string
+  description: string
+  location: string
+  status: IssueStatus
+  priority: IssuePriority
+  createdAt: string
+}

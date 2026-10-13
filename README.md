@@ -43,6 +43,8 @@ Connection reference: https://mongoosejs.com/docs/connections.html
 
 ## Git workflow
 
+Authentication and user reporting: see [API contract, UI behavior and verification checklist](docs/user-reporting.md).
+
 - Never push directly to `main`.
 - Create branches from the latest `main`, for example `feature/auth`.
 - Open a Pull Request for every feature and request one teammate review.
