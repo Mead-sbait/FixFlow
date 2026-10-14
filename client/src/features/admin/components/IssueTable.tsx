@@ -1,3 +1,6 @@
+import { Icon } from '../../../components/Icon'
+import { StatusTag } from '../../../components/IssueStrip'
+import { formatDate } from '../../../lib/roles'
 import type { IssuePriority } from '../../../types'
 import type { AdminIssue, PersonRef } from '../admin.types'
 import { TechnicianSelector } from './TechnicianSelector'
@@ -13,14 +16,10 @@ type Props = {
 
 const priorities: IssuePriority[] = ['low', 'medium', 'high', 'urgent']
 
-function formatDate(value: string) {
-  return new Date(value).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })
-}
-
 export function IssueTable({ issues, technicians, savingId, onAssign, onPriorityChange, onStatusChange }: Props) {
   return (
-    <div className="admin-table-wrap">
-      <table className="admin-table">
+    <div className="table-scroll">
+      <table className="table">
         <thead>
           <tr>
             <th>Issue</th>
@@ -29,7 +28,7 @@ export function IssueTable({ issues, technicians, savingId, onAssign, onPriority
             <th>Reporter</th>
             <th>Technician</th>
             <th>Reported</th>
-            <th>Actions</th>
+            <th><span className="sr-only">Actions</span></th>
           </tr>
         </thead>
         <tbody>
@@ -39,45 +38,39 @@ export function IssueTable({ issues, technicians, savingId, onAssign, onPriority
 
             return (
               <tr key={issue.id} className={saving ? 'is-saving' : undefined}>
-                <td data-label="Issue">
-                  <span className="issue-title">{issue.title}</span>
-                  <span className="issue-meta">
-                    {issue.category?.name ?? 'No category'} · {issue.location}
-                  </span>
+                <td className="cell-title" data-label="Issue">
+                  <strong className={issue.status === 'cancelled' ? 'struck' : undefined}>{issue.title}</strong>
+                  <span>{issue.category?.name ?? 'No category'} · {issue.location}</span>
                 </td>
-                <td data-label="Status">
-                  <span className={`badge badge--${issue.status}`}>{issue.status.replace('_', ' ')}</span>
-                </td>
+                <td data-label="Status"><StatusTag status={issue.status} /></td>
                 <td data-label="Priority">
-                  <select
-                    className={`badge badge--${issue.priority}`}
-                    value={issue.priority}
-                    disabled={saving || closed}
-                    onChange={(event) => onPriorityChange(issue.id, event.target.value as IssuePriority)}
-                  >
-                    {priorities.map((priority) => (
-                      <option key={priority} value={priority}>{priority}</option>
-                    ))}
-                  </select>
+                  <span className="inline">
+                    <span className={`magnet magnet--${issue.priority}`} />
+                    <select
+                      className="select select--sm"
+                      style={{ width: 'auto' }}
+                      aria-label={`Priority for ${issue.title}`}
+                      value={issue.priority}
+                      disabled={saving || closed}
+                      onChange={(event) => onPriorityChange(issue.id, event.target.value as IssuePriority)}
+                    >
+                      {priorities.map((priority) => <option key={priority} value={priority}>{priority}</option>)}
+                    </select>
+                  </span>
                 </td>
                 <td data-label="Reporter">{issue.reporter?.name ?? 'Unknown'}</td>
                 <td data-label="Technician">
-                  <TechnicianSelector
-                    issue={issue}
-                    technicians={technicians}
-                    disabled={saving}
-                    onAssign={(technicianId) => onAssign(issue.id, technicianId)}
-                  />
+                  <TechnicianSelector issue={issue} technicians={technicians} disabled={saving} compact onAssign={(technicianId) => onAssign(issue.id, technicianId)} />
                 </td>
-                <td data-label="Reported">{formatDate(issue.createdAt)}</td>
-                <td data-label="Actions">
+                <td data-label="Reported" className="tabular">{formatDate(issue.createdAt)}</td>
+                <td className="cell-actions" data-label="Actions">
                   {closed ? (
-                    <button type="button" disabled={saving} onClick={() => onStatusChange(issue, 'open')}>
-                      Reopen
+                    <button type="button" className="btn btn--secondary btn--sm" disabled={saving} onClick={() => onStatusChange(issue, 'open')}>
+                      <Icon name="undo" size={14} /> Reopen
                     </button>
                   ) : (
-                    <button type="button" className="danger" disabled={saving} onClick={() => onStatusChange(issue, 'cancelled')}>
-                      Cancel
+                    <button type="button" className="btn btn--danger btn--sm" disabled={saving} onClick={() => onStatusChange(issue, 'cancelled')}>
+                      <Icon name="ban" size={14} /> Cancel
                     </button>
                   )}
                 </td>

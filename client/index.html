@@ -1,17 +1,25 @@
 <!doctype html>
 <html lang="en">
-  <head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /><title>FixFlow</title></head>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f6f7f6" />
+    <title>FixFlow</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
+  </head>
   <body>
     <!--
-      THESIS: FixFlow is an operations-first maintenance control board, not a decorative analytics dashboard.
-      OWN-WORLD: The interface behaves like a calm facilities command desk: clear queue, visible workload, direct assignment.
-      STORY: An administrator scans pressure, narrows the work queue, inspects one issue, then assigns ownership without losing context.
-      FIRST VIEWPORT: Navigation, workload status, filters, queue rows, and the active assignment panel are immediately legible.
-      FORM: One continuous work surface with a dark rail, restrained semantic color, compact type, and persistent issue detail. Seed f12064a6.
+      THESIS: FixFlow is the caretaker's dispatch whiteboard. Every issue is a magnetic strip; assigning is moving it into a technician's column. Refused: the sidebar-plus-stat-cards admin dashboard.
+      OWN-WORLD: Whiteboard white ground inside a brushed aluminium frame. Marker ink only: blue for writing and actions, red for urgent and unassigned, green for done, orange for high. Round magnet dots carry priority. Column headings are marker-written with an underline stroke. Cancelled strips are struck through, never removed. Atkinson Hyperlegible throughout.
+      STORY: A user pins a strip on the board. The admin drags it under a technician's name. The technician works it to the green tick. Everyone watches the same board.
+      FIRST VIEWPORT: Frame bar with FixFlow label, role tabs and bell. Below it the board: Unassigned column in red on the left, one column per technician, strips with magnet, title, location, status. Filters sit in the board's top tray. Primary action is the drag itself; the strip's menu is the keyboard path.
+      FORM: Facilities dispatch whiteboard, my top-ranked grounded candidate, chosen as the pick over the roll's assignment. Seed 69540d14.
       FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance
     -->
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
-

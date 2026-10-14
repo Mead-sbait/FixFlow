@@ -1,10 +1,10 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import type { AppDispatch, RootState } from '../app/store'
-import { AdminNav } from '../features/admin/components/AdminNav'
+import { Icon } from '../components/Icon'
 import { changeUserRole, clearAdminError, fetchAdminUsers, setUserFilters } from '../features/admin/adminSlice'
+import { formatDate } from '../lib/roles'
 import type { UserRole } from '../types'
-import '../features/admin/admin.css'
 
 const roles: UserRole[] = ['user', 'technician', 'admin']
 
@@ -16,18 +16,10 @@ export function AdminUsers() {
   const [search, setSearch] = useState(userFilters.search)
 
   useEffect(() => {
-    if (token) {
-      dispatch(fetchAdminUsers(token))
-    }
+    if (token) dispatch(fetchAdminUsers(token))
   }, [dispatch, token, userFilters])
 
-  if (!token) {
-    return <main className="admin-page"><p>Authentication required.</p></main>
-  }
-
-  if (me && me.role !== 'admin') {
-    return <main className="admin-page"><p>Admin access required.</p></main>
-  }
+  if (!token) return null
 
   const submitSearch = (event: FormEvent) => {
     event.preventDefault()
@@ -40,46 +32,43 @@ export function AdminUsers() {
   }
 
   return (
-    <main className="admin-page">
-      <h1>Users</h1>
-      <p>Promote accounts to technician or admin. New registrations always start as normal users.</p>
-
-      <AdminNav />
+    <main className="page">
+      <div className="page__head">
+        <div>
+          <h1><span className="marker marker--blue">People</span></h1>
+          <p>Everyone with an account. New sign-ups start as reporters; make someone a technician to give them a column.</p>
+        </div>
+      </div>
 
       {error && (
-        <div className="admin-error" role="alert">
+        <div className="notice notice--error" role="alert" style={{ marginBottom: 16 }}>
+          <Icon name="alert" size={16} />
           <span>{error}</span>
-          <button type="button" onClick={() => dispatch(clearAdminError())} aria-label="Dismiss">×</button>
+          <button type="button" className="close" onClick={() => dispatch(clearAdminError())} aria-label="Dismiss"><Icon name="x" size={14} /></button>
         </div>
       )}
 
-      <form className="issue-filters" onSubmit={submitSearch}>
-        <input
-          type="search"
-          placeholder="Search by name or email"
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-        />
-        <select
-          value={userFilters.role}
-          onChange={(event) => dispatch(setUserFilters({ role: event.target.value as UserRole | '' }))}
-        >
-          <option value="">All roles</option>
-          {roles.map((role) => (
-            <option key={role} value={role}>{role}</option>
-          ))}
+      <form className="board-tray" onSubmit={submitSearch} aria-label="Filter people">
+        <div className="search">
+          <Icon name="search" size={16} />
+          <input className="input input--sm" type="search" placeholder="Search by name or email" aria-label="Search people" value={search} onChange={(event) => setSearch(event.target.value)} />
+        </div>
+        <select className="select select--sm" aria-label="Role" value={userFilters.role} onChange={(event) => dispatch(setUserFilters({ role: event.target.value as UserRole | '' }))}>
+          <option value="">Any role</option>
+          {roles.map((role) => <option key={role} value={role}>{role}</option>)}
         </select>
-        <button type="submit">Search</button>
+        <button type="submit" className="btn btn--secondary btn--sm">Search</button>
+        <span className="board-tray__count tabular">{users.length} {users.length === 1 ? 'account' : 'accounts'}</span>
       </form>
 
-      {loadingUsers && users.length === 0 ? (
-        <p>Loading users...</p>
-      ) : (
-        <div className="admin-table-wrap">
-          {users.length === 0 ? (
-            <div className="admin-empty">No users found.</div>
-          ) : (
-            <table className="admin-table">
+      <div className="sheet">
+        {loadingUsers && users.length === 0 ? (
+          <div className="empty"><p className="loading">Loading people…</p></div>
+        ) : users.length === 0 ? (
+          <div className="empty"><Icon name="users" size={36} /><h3>Nobody matches</h3><p>Try another name or role.</p></div>
+        ) : (
+          <div className="table-scroll">
+            <table className="table">
               <thead>
                 <tr>
                   <th>Name</th>
@@ -92,22 +81,22 @@ export function AdminUsers() {
               <tbody>
                 {users.map((user) => {
                   const isMe = user.id === me?.id
-
                   return (
                     <tr key={user.id} className={savingId === user.id ? 'is-saving' : undefined}>
-                      <td>{user.name}{isMe ? ' (you)' : ''}</td>
-                      <td>{user.email}</td>
-                      <td><span className={`badge badge--${user.role}`}>{user.role}</span></td>
-                      <td>{new Date(user.createdAt).toLocaleDateString()}</td>
-                      <td>
+                      <td className="cell-title" data-label="Name"><strong>{user.name}{isMe ? ' (you)' : ''}</strong></td>
+                      <td data-label="Email">{user.email}</td>
+                      <td data-label="Role"><span className={`tag tag--${user.role}`}>{user.role}</span></td>
+                      <td data-label="Joined" className="tabular">{formatDate(user.createdAt)}</td>
+                      <td data-label="Change role">
                         <select
+                          className="select select--sm"
+                          style={{ width: 'auto' }}
+                          aria-label={`Role for ${user.name}`}
                           value={user.role}
                           disabled={isMe || savingId === user.id}
                           onChange={(event) => handleRole(user.id, user.name, event.target.value as UserRole)}
                         >
-                          {roles.map((role) => (
-                            <option key={role} value={role}>{role}</option>
-                          ))}
+                          {roles.map((role) => <option key={role} value={role}>{role}</option>)}
                         </select>
                       </td>
                     </tr>
@@ -115,9 +104,9 @@ export function AdminUsers() {
                 })}
               </tbody>
             </table>
-          )}
-        </div>
-      )}
+          </div>
+        )}
+      </div>
     </main>
   )
 }

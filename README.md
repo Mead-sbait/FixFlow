@@ -33,6 +33,25 @@ The client runs at `http://localhost:5173`; the API health check is at `http://l
 
 `npm test` runs the client tests (vitest) and the server tests (node:test). Neither needs MongoDB running.
 
+## Client
+
+The interface is one "dispatch whiteboard": every issue is a strip, assigning is moving it into a technician's column. All styling lives in `client/src/styles.css` (tokens at the top), icons are inline SVG in `client/src/components/Icon.tsx`, the font is Atkinson Hyperlegible from Google Fonts.
+
+| Route | Who | What |
+| --- | --- | --- |
+| `/login`, `/register` | public | sign in, or create a reporter account |
+| `/dashboard` | user | my issues, filter active / done |
+| `/issues/new` | user | report an issue |
+| `/issues/:id` | user | one issue with its status line |
+| `/technician` | technician | my column: assigned and in progress jobs |
+| `/technician/issues/:id` | technician | start / complete, comments and internal notes |
+| `/admin` | admin | the board: drag strips between technician columns, or use the menu on each strip |
+| `/admin/issues` | admin | every issue as a table with filters and paging |
+| `/admin/users` | admin | change roles |
+| `/admin/statistics` | admin | tally by status, category and technician |
+
+The session (token + user) is kept in `localStorage` under `fixflow.session` so a refresh does not log you out. One Socket.IO connection per session (`useRealtimeSocket`) refreshes whatever the current role is looking at.
+
 ## Admin area
 
 The admin pages are `/admin` (issue queue, also reachable as `/admin/issues`), `/admin/users` and `/admin/statistics`. They send the JWT from the Redux auth state as a bearer token. Every admin route checks the token and then looks the account up in MongoDB to confirm it still has the `admin` role.

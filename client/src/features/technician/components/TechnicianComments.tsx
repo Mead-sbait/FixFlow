@@ -1,10 +1,11 @@
-
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { createTechnicianComment, getTechnicianComments } from '../technicianApi'
 import type { TechnicianComment } from '../technician.types'
 import { useSelector } from 'react-redux'
 import type { RootState } from '../../../app/store'
+import { Icon } from '../../../components/Icon'
+import { formatDate } from '../../../lib/roles'
 
 type Props = {
     token: string
@@ -26,23 +27,15 @@ export function TechnicianComments({ token, issueId }: Props)
 
         async function loadComments() {
             setLoading(true)
-            setComments([])
             setError(null)
 
             try {
                 const result = await getTechnicianComments(token, issueId)
-
-                if (active) {
-                    setComments(result)
-                }
+                if (active) setComments(result)
             } catch {
-                if (active) {
-                    setError('Unable to load comments.')
-                }
+                if (active) setError('Unable to load comments.')
             } finally {
-                if (active) {
-                    setLoading(false)
-                }
+                if (active) setLoading(false)
             }
         }
 
@@ -57,24 +50,13 @@ export function TechnicianComments({ token, issueId }: Props)
         event.preventDefault()
 
         const trimmedMessage = message.trim()
-
-        if (!trimmedMessage || submitting) {
-            return
-        }
+        if (!trimmedMessage || submitting) return
 
         setSubmitting(true)
         setError(null)
 
         try {
-            const newComment = await createTechnicianComment(
-                token,
-                issueId,
-                {
-                    message: trimmedMessage,
-                    isInternal,
-                }
-            )
-
+            const newComment = await createTechnicianComment(token, issueId, { message: trimmedMessage, isInternal })
             setComments((previous) => [...previous, newComment])
             setMessage('')
             setIsInternal(false)
@@ -86,78 +68,61 @@ export function TechnicianComments({ token, issueId }: Props)
     }
 
     return (
-        <section className="technician-comments">
-            <h2>Comments & Internal Notes</h2>
+        <section aria-labelledby="comments-heading">
+            <h2 id="comments-heading">Comments and notes</h2>
 
             {error && (
-                <p className="technician-comments__error" role="alert">
-                    {error}
-                </p>
+                <div className="notice notice--error" role="alert" style={{ marginBottom: 12 }}>
+                    <Icon name="alert" size={16} />{error}
+                </div>
             )}
 
             {loading ? (
-                <p>Loading comments...</p>
+                <p className="loading">Loading comments…</p>
             ) : comments.length === 0 ? (
-                <p>No comments yet.</p>
+                <p className="muted">No comments yet. Public comments are seen by the reporter, internal notes only by technicians and admins.</p>
             ) : (
-                <div className="technician-comments__list">
+                <div className="comments">
                     {comments.map((comment) => (
-                        <article
-                            key={comment.id}
-                            className="technician-comments__item"
-                        >
-                            <div className="technician-comments__header">
-                                <strong>
-                                    {comment.author?.name ?? 'Unknown'}
-                                </strong>
-
-                                <span>
-                                    {comment.isInternal
-                                        ? 'Internal Note'
-                                        : 'Public Comment'}
-                                </span>
+                        <article key={comment.id} className={comment.isInternal ? 'comment comment--internal' : 'comment'}>
+                            <div className="comment__head">
+                                <strong>{comment.author?.name ?? 'Unknown'}</strong>
+                                {comment.author?.role && <span className={`tag tag--${comment.author.role}`}>{comment.author.role}</span>}
+                                {comment.isInternal && <span className="tag tag--internal"><Icon name="note" size={12} /> Internal</span>}
+                                <time dateTime={comment.createdAt}>{formatDate(comment.createdAt, true)}</time>
                             </div>
-
                             <p>{comment.message}</p>
-
-                            <small>
-                                {new Date(comment.createdAt).toLocaleString()}
-                            </small>
                         </article>
                     ))}
                 </div>
             )}
 
-            <form onSubmit={handleSubmit}>
-                <label htmlFor="technician-comment">
-                    Add Comment
-                </label>
-
-                <textarea
-                    id="technician-comment"
-                    value={message}
-                    onChange={(event) => setMessage(event.target.value)}
-                    placeholder="Write your comment..."
-                    maxLength={2000}
-                    rows={4}
-                    required
-                />
-
-                <label className="technician-comments__checkbox">
-                    <input
-                        type="checkbox"
-                        checked={isInternal}
-                        onChange={(event) => setIsInternal(event.target.checked)}
+            <form className="comment-form" onSubmit={handleSubmit}>
+                <div className="field">
+                    <label htmlFor="technician-comment">Add a comment</label>
+                    <textarea
+                        id="technician-comment"
+                        className="textarea"
+                        style={{ minHeight: 90 }}
+                        value={message}
+                        onChange={(event) => setMessage(event.target.value)}
+                        placeholder={isInternal ? 'Only technicians and admins will see this' : 'The reporter will see this'}
+                        maxLength={2000}
+                        rows={3}
+                        required
                     />
-                    Internal Note
-                </label>
+                </div>
 
-                <button
-                    type="submit"
-                    disabled={submitting || !message.trim()}
-                >
-                    {submitting ? 'Sending...' : 'Add Comment'}
-                </button>
+                <div className="comment-form__row">
+                    <label className="check">
+                        <input type="checkbox" checked={isInternal} onChange={(event) => setIsInternal(event.target.checked)} />
+                        Internal note
+                    </label>
+
+                    <button type="submit" className="btn btn--secondary" disabled={submitting || !message.trim()}>
+                        {submitting ? 'Sending…' : isInternal ? 'Add note' : 'Add comment'}
+                    </button>
+                </div>
             </form>
         </section>
     )
