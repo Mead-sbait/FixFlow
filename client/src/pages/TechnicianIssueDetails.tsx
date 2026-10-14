@@ -70,7 +70,7 @@ export function TechnicianIssueDetails() {
                     <StatusSteps status={issue.status} />
 
                     <div className="detail">
-                        <div>
+                        <div className="stack">
                             <section className="panel">
                                 <h2>Details</h2>
                                 <p className="description">{issue.description}</p>

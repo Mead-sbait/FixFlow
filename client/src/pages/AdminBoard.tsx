@@ -48,8 +48,8 @@ export function AdminBoard() {
     const byTechnician: Record<string, AdminIssue[]> = { [UNASSIGNED]: [] }
     for (const technician of admin.technicians) byTechnician[technician.id] = []
     for (const issue of admin.issues) {
-      const done = issue.status === 'completed' || issue.status === 'cancelled'
-      if (done && !showDone) continue
+      // cancelled strips stay on the board, struck through; only finished ones go behind "show done"
+      if (issue.status === 'completed' && !showDone) continue
       const key = issue.technician?.id ?? UNASSIGNED
       if (!byTechnician[key]) byTechnician[key] = []
       byTechnician[key].push(issue)

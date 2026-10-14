@@ -1,4 +1,5 @@
 import type { IssueStatus } from '../types'
+import { Icon } from './Icon'
 
 const order: IssueStatus[] = ['open', 'assigned', 'in_progress', 'completed']
 const labels: Record<IssueStatus, string> = {
@@ -24,11 +25,17 @@ export function StatusSteps({ status }: { status: IssueStatus }) {
 
   return (
     <ol className="steps" aria-label="Status">
-      {order.map((step, index) => (
-        <li key={step} className={index < current ? 'done' : index === current ? 'now' : ''} aria-current={index === current ? 'step' : undefined}>
-          <span className="dot" />{labels[step]}
-        </li>
-      ))}
+      {order.map((step, index) => {
+        // finished issues end on the green tick, not on a "you are here" dot
+        const finished = step === 'completed' && status === 'completed'
+        const className = finished ? 'done ticked' : index < current ? 'done' : index === current ? 'now' : ''
+        return (
+          <li key={step} className={className} aria-current={!finished && index === current ? 'step' : undefined}>
+            {finished ? <span className="tick"><Icon name="check" size={12} /></span> : <span className="dot" />}
+            {labels[step]}
+          </li>
+        )
+      })}
     </ol>
   )
 }
