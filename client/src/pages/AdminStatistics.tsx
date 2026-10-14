@@ -1,81 +1,81 @@
-import { useCallback, useEffect } from 'react'
+import { useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import type { AppDispatch, RootState } from '../app/store'
-import { AdminNav } from '../features/admin/components/AdminNav'
-import { StatsCards } from '../features/admin/components/StatsCards'
+import { Icon } from '../components/Icon'
 import { fetchAdminStats } from '../features/admin/adminSlice'
-import type { CountByName } from '../features/admin/admin.types'
-import { useAdminSocket } from '../features/admin/useAdminSocket'
-import '../features/admin/admin.css'
+import type { AdminStats, CountByName } from '../features/admin/admin.types'
+import { useT } from '../i18n'
 
-function Breakdown({ title, rows, empty }: { title: string; rows: CountByName[]; empty: string }) {
+type Tone = 'blue' | 'green' | 'red' | 'grey'
+
+function Bars({ title, rows, empty, tone = 'blue' }: { title: string; rows: (CountByName & { tone?: Tone })[]; empty: string; tone?: Tone }) {
   const max = Math.max(...rows.map((row) => row.count), 1)
 
   return (
-    <section>
+    <section className="tally-sheet__section">
       <h2>{title}</h2>
       {rows.length === 0 ? (
-        <p>{empty}</p>
+        <p className="muted">{empty}</p>
       ) : (
-        rows.map((row) => (
-          <div className="stats-bar" key={row.id}>
-            <div>
+        <div className="bars">
+          {rows.map((row) => (
+            <div className="bar" key={row.id}>
               <span>{row.name}</span>
-              <span>{row.count}</span>
+              <div className="bar__track"><div className={`bar__fill bar__fill--${row.tone ?? tone}`} style={{ transform: `scaleX(${row.count / max})` }} /></div>
+              <strong>{row.count}</strong>
             </div>
-            <i style={{ width: `${(row.count / max) * 100}%` }} />
-          </div>
-        ))
+          ))}
+        </div>
       )}
     </section>
   )
 }
 
+// the tally sheet: how much is on the board, and who is carrying it
 export function AdminStatistics() {
   const dispatch = useDispatch<AppDispatch>()
+  const { t } = useT()
   const token = useSelector((state: RootState) => state.auth.token)
-  const role = useSelector((state: RootState) => state.auth.user?.role)
   const { stats, loadingStats, error } = useSelector((state: RootState) => state.admin)
 
-  const loadStats = useCallback(() => {
-    if (token) {
-      dispatch(fetchAdminStats(token))
-    }
+  useEffect(() => {
+    if (token) dispatch(fetchAdminStats(token))
   }, [dispatch, token])
 
-  useEffect(() => {
-    loadStats()
-  }, [loadStats])
-
-  useAdminSocket(token, loadStats)
-
-  if (!token) {
-    return <main className="admin-page"><p>Authentication required.</p></main>
-  }
-
-  if (role && role !== 'admin') {
-    return <main className="admin-page"><p>Admin access required.</p></main>
-  }
+  const statusRows = (data: AdminStats): (CountByName & { tone: Tone })[] => [
+    { id: 'open', name: t('status.open'), count: data.open, tone: 'grey' },
+    { id: 'assigned', name: t('status.assigned'), count: data.assigned, tone: 'blue' },
+    { id: 'in_progress', name: t('status.in_progress'), count: data.inProgress, tone: 'blue' },
+    { id: 'completed', name: t('status.completed'), count: data.completed, tone: 'green' },
+    { id: 'cancelled', name: t('status.cancelled'), count: data.cancelled, tone: 'red' }
+  ]
 
   return (
-    <main className="admin-page">
-      <h1>Statistics</h1>
-      <p>Overview of all maintenance issues{stats ? ` (${stats.total} total, ${stats.cancelled} cancelled)` : ''}.</p>
+    <main className="page">
+      <div className="page__head">
+        <div>
+          <h1><span className="marker marker--blue">{t('tally.title')}</span></h1>
+          <p>{stats ? t('tally.lead', { total: stats.total }) : t('tally.counting')}</p>
+        </div>
+      </div>
 
-      <AdminNav />
+      {error && <div className="notice notice--error" role="alert" style={{ marginBottom: 16 }}><Icon name="alert" size={16} />{error}</div>}
 
-      {error && <div className="admin-error" role="alert"><span>{error}</span></div>}
-
-      <StatsCards stats={stats} loading={loadingStats} />
-
-      {stats && (
-        <div className="stats-breakdown">
-          <Breakdown title="Issues by category" rows={stats.byCategory} empty="No issues yet." />
-          <Breakdown
-            title="Active issues per technician"
-            rows={stats.byTechnician}
-            empty="No technician has active work right now."
-          />
+      {loadingStats && !stats ? (
+        <div className="skeleton" aria-busy="true" aria-label={t('common.loading')}><i /><i /></div>
+      ) : stats && (
+        <div className="tally-sheet">
+          <section className="tally-sheet__section tally-sheet__attention" aria-label={t('tally.attention')}>
+            <p>
+              <strong className={stats.unassigned ? 'priority-word--urgent' : undefined}>{stats.unassigned}</strong> {t('tally.waiting')}
+            </p>
+            <p>
+              <strong className={stats.urgent ? 'priority-word--urgent' : undefined}>{stats.urgent}</strong> {t('tally.urgentOpen')}
+            </p>
+          </section>
+          <Bars title={t('tally.byStatus')} rows={statusRows(stats)} empty={t('tally.noIssues')} />
+          <Bars title={t('tally.byCategory')} rows={stats.byCategory} empty={t('tally.noIssues')} />
+          <Bars title={t('tally.perTechnician')} rows={stats.byTechnician} empty={t('tally.noActive')} tone="green" />
         </div>
       )}
     </main>
