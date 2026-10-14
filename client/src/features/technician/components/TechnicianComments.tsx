@@ -75,7 +75,11 @@ export function TechnicianComments({ token, issueId }: Props)
                 }
             )
 
-            setComments((previous) => [...previous, newComment])
+            setComments((previous) =>
+                previous.some((comment) => comment.id === newComment.id)
+                    ? previous
+                    : [...previous, newComment]
+            )
             setMessage('')
             setIsInternal(false)
         } catch {

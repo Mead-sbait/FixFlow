@@ -83,9 +83,20 @@ const notificationSlice = createSlice({
                     return
                 }
 
+                // Preserve notifications already marked as read
+                const readIds = new Set(
+                    state.items
+                        .filter((item) => item.isRead)
+                        .map((item) => item.id)
+                )
+
                 state.loading = false
                 state.fetchRequestId = null
-                state.items = action.payload
+
+                state.items = action.payload.map((item) => ({
+                    ...item,
+                    isRead: item.isRead || readIds.has(item.id),
+                }))
             })
 
             // Fetch - Error
