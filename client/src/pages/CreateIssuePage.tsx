@@ -12,7 +12,7 @@ const priorities: IssuePriority[] = ['low', 'medium', 'high', 'urgent']
 export function CreateIssuePage() {
   const dispatch = useDispatch<AppDispatch>()
   const navigate = useNavigate()
-  const { t } = useT()
+  const { t, errorMessage, category: categoryLabel } = useT()
   const token = useSelector((state: RootState) => state.auth.token)
   const { categories, saving, error } = useSelector((state: RootState) => state.issues)
   const [title, setTitle] = useState('')
@@ -42,7 +42,7 @@ export function CreateIssuePage() {
       data: { title: title.trim(), location: location.trim(), categoryId, priority, description: description.trim() }
     }))
     if (reportIssue.fulfilled.match(result)) {
-      navigate(`/issues/${result.payload.id}`, { state: { notice: t('report.pinned') } })
+      navigate(`/issues/${result.payload.id}`, { state: { notice: 'report.pinned' } })
     }
   }
 
@@ -58,7 +58,7 @@ export function CreateIssuePage() {
       </div>
 
       <form className="panel" onSubmit={submit} noValidate>
-        {error && <div className="notice notice--error" role="alert" style={{ marginBottom: 16 }}><Icon name="alert" size={16} />{error}</div>}
+        {error && <div className="notice notice--error" role="alert" style={{ marginBottom: 16 }}><Icon name="alert" size={16} />{errorMessage(error)}</div>}
 
         <div style={{ display: 'grid', gap: 16 }}>
           <div className="field">
@@ -75,9 +75,12 @@ export function CreateIssuePage() {
 
           <div className="field">
             <label htmlFor="issue-category">{t('report.category')}</label>
-            <select id="issue-category" className="select" value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
-              {categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
+            <div className="category-picker">
+          <Icon name="board" size={18} />
+          <select id="issue-category" className="select category-picker__select" value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
+              {categories.map((category) => <option key={category.id} value={category.id}>{categoryLabel(category.name)}</option>)}
             </select>
+        </div>
           </div>
 
           <div className="field">

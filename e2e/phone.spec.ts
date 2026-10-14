@@ -45,10 +45,10 @@ test.describe('on a phone', () => {
   test('the notifications panel opens and closes on a phone', async ({ page, request }) => {
     const admin = await adminSession(request)
     await signIn(page, admin, '/admin')
-    await page.getByRole('button', { name: /Notifications/ }).click()
-    const panel = page.getByRole('dialog', { name: 'Notifications' })
+    await page.getByRole('button', { name: /الإشعارات/ }).click()
+    const panel = page.getByRole('dialog', { name: "الإشعارات" })
     await expect(panel).toBeVisible()
-    await page.getByRole('button', { name: 'Close' }).click()
+    await page.getByRole('button', { name: "إغلاق" }).click()
     await expect(panel).toHaveCount(0)
   })
 })

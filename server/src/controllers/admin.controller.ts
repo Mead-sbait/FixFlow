@@ -1,5 +1,7 @@
 import type { Request, Response } from 'express'
 import {
+  getAdminIssueById,
+  getAdminIssueComments,
   assignTechnician,
   getStats as loadStats,
   listIssues,
@@ -239,4 +241,19 @@ export async function changeUserRole(req: Request<{ id: string }>, res: Response
       code: 'INTERNAL_ERROR',
     })
   }
+}
+
+export async function getIssueDetails(req: Request<{ id: string }>, res: Response) {
+  try {
+    const issue = await getAdminIssueById(req.params.id)
+    if (!issue) { res.status(404).json({ error: 'Issue not found', code: 'NOT_FOUND' }); return }
+    res.json(issue)
+  } catch { res.status(500).json({ error: 'Unable to load issue', code: 'INTERNAL_ERROR' }) }
+}
+export async function getIssueComments(req: Request<{ id: string }>, res: Response) {
+  try {
+    const comments = await getAdminIssueComments(req.params.id)
+    if (comments === null) { res.status(404).json({ error: 'Issue not found', code: 'NOT_FOUND' }); return }
+    res.json(comments)
+  } catch { res.status(500).json({ error: 'Unable to load comments', code: 'INTERNAL_ERROR' }) }
 }

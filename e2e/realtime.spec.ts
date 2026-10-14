@@ -27,10 +27,10 @@ test.describe('live updates', () => {
     const issue = await createIssue(request, reporter.session, title)
 
     await signIn(page, tech.session, '/technician')
-    await expect(page.getByText('Your column is empty')).toBeVisible()
+    await expect(page.getByText("لا مهام بانتظارك")).toBeVisible()
 
     await assignIssue(request, issue.id, tech.session.user.id)
     await expect(page.getByRole('link', { name: new RegExp(title) })).toBeVisible({ timeout: 10_000 })
-    await expect(page.getByRole('button', { name: /Notifications, 1 unread/ })).toBeVisible({ timeout: 10_000 })
+    await expect(page.getByRole('button', { name: /الإشعارات، 1 غير مقروءة/ })).toBeVisible({ timeout: 10_000 })
   })
 })

@@ -11,7 +11,7 @@ const roles: UserRole[] = ['user', 'technician', 'admin']
 
 export function AdminUsers() {
   const dispatch = useDispatch<AppDispatch>()
-  const { t, locale } = useT()
+  const { t, locale, errorMessage } = useT()
   const token = useSelector((state: RootState) => state.auth.token)
   const me = useSelector((state: RootState) => state.auth.user)
   const { users, userFilters, loadingUsers, savingId, error } = useSelector((state: RootState) => state.admin)
@@ -45,7 +45,7 @@ export function AdminUsers() {
       {error && (
         <div className="notice notice--error" role="alert" style={{ marginBottom: 16 }}>
           <Icon name="alert" size={16} />
-          <span>{error}</span>
+          <span>{errorMessage(error)}</span>
           <button type="button" className="close" onClick={() => dispatch(clearAdminError())} aria-label={t('common.dismiss')}><Icon name="x" size={14} /></button>
         </div>
       )}

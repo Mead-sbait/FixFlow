@@ -1,5 +1,5 @@
 import mongoose, { isValidObjectId } from 'mongoose'
-import { Category, Issue, IssueStatusHistory, Notification, User } from '../models/index.js'
+import { Category, Comment, Issue, IssueStatusHistory, Notification, User } from '../models/index.js'
 import { emitToAdmins, emitToUser, syncRoleRooms } from '../sockets/emitter.js'
 import type { IssueListQuery, UserListQuery } from '../validators/admin.validator.js'
 
@@ -103,11 +103,11 @@ function announceNotifications(saved: { userId: string; notificationId: string }
 // what status an admin request ends up in, or null if the change is not allowed
 export function resolveAdminStatus(
   current: AdminIssueData['status'],
-  requested: 'open' | 'cancelled',
+  requested: 'open' | 'cancelled' | 'completed',
   hasTechnician: boolean
 ): AdminIssueData['status'] | null {
-  if (requested === 'cancelled') {
-    return closedStatuses.includes(current) ? null : 'cancelled'
+  if (requested === 'cancelled' || requested === 'completed') {
+    return closedStatuses.includes(current) ? null : requested
   }
 
   // reopen: only from a closed state, and keep the technician if there was one
@@ -367,7 +367,7 @@ export async function updatePriority(issueId: string, priority: AdminIssueData['
   return { type: 'updated', issue: result } as const
 }
 
-export async function updateStatus(adminId: string, issueId: string, requested: 'open' | 'cancelled') {
+export async function updateStatus(adminId: string, issueId: string, requested: 'open' | 'cancelled' | 'completed') {
   if (!isValidObjectId(issueId)) {
     return { type: 'not_found' } as const
   }
@@ -408,7 +408,7 @@ export async function updateStatus(adminId: string, issueId: string, requested: 
       { session }
     )
 
-    const word = requested === 'cancelled' ? 'cancelled' : 'reopened'
+    const word = requested === 'open' ? 'reopened' : requested
     const pending: PendingNotification[] = [
       {
         userId: issue.reporterId,
@@ -480,7 +480,7 @@ export async function updateUserRole(adminId: string, userId: string, role: 'use
   const user = await User.findByIdAndUpdate(
     userId,
     { role },
-    { new: true, runValidators: true }
+    { returnDocument: 'after', runValidators: true }
   ).select('name email role createdAt')
 
   if (!user) {
@@ -492,4 +492,18 @@ export async function updateUserRole(adminId: string, userId: string, role: 'use
   syncRoleRooms(user._id.toString(), role)
 
   return { type: 'updated', user: user.toJSON() } as const
+}
+
+export async function getAdminIssueById(issueId: string) {
+  if (!isValidObjectId(issueId)) return null
+  const issue = await findIssueWithRefs(issueId)
+  return issue ? toAdminIssue(issue) : null
+}
+export async function getAdminIssueComments(issueId: string) {
+  if (!isValidObjectId(issueId) || !await Issue.exists({ _id: issueId })) return null
+  const comments = await Comment.find({ issueId }).populate('userId', 'name role').sort({ createdAt: 1, _id: 1 })
+  return comments.map(comment => {
+    const data = comment.toJSON() as unknown as { id: string; userId: { id: string; name: string; role: string } | null; message: string; isInternal: boolean; createdAt: Date }
+    return { id: data.id, issueId, author: data.userId, message: data.message, isInternal: data.isInternal, createdAt: data.createdAt }
+  })
 }

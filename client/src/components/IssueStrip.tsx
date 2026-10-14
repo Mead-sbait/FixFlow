@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import type { IssuePriority, IssueStatus } from '../types'
 import { useT } from '../i18n'
@@ -35,7 +35,7 @@ export function StatusTag({ status }: { status: IssueStatus }) {
 
 // one magnetic strip on the board, the same anatomy everywhere it shows up
 export function IssueStrip({ issue, to, draggable, saving, settle, children, onDragStart, onDragEnd }: Props) {
-  const { t, locale } = useT()
+  const { t, locale, category } = useT()
   const done = issue.status === 'completed' || issue.status === 'cancelled'
   const classes = [
     'strip',
@@ -60,7 +60,7 @@ export function IssueStrip({ issue, to, draggable, saving, settle, children, onD
       </span>
       <div className="strip__meta">
         <StatusTag status={issue.status} />
-        {issue.categoryName && <span>{issue.categoryName}</span>}
+        {issue.categoryName && <span>{category(issue.categoryName)}</span>}
         {issue.technicianName && <span>{issue.technicianName}</span>}
         {issue.reporterName && <span>{t('common.by', { name: issue.reporterName })}</span>}
         <span className="tabular">{formatDate(issue.createdAt, locale)}</span>
@@ -88,5 +88,29 @@ export function IssueStrip({ issue, to, draggable, saving, settle, children, onD
     >
       {body}
     </article>
+  )
+}
+
+// Shared decorative preview for both authentication screens.
+export function AuthDemo() {
+  const { t } = useT()
+  const [paused, setPaused] = useState(false)
+  const now = new Date().toISOString()
+  const sample = [
+    { id: 'a', title: t('sample.1.title'), location: t('sample.1.location'), status: 'assigned' as const, priority: 'high' as const, createdAt: now, technicianName: t('sample.tech1') },
+    { id: 'b', title: t('sample.2.title'), location: t('sample.2.location'), status: 'in_progress' as const, priority: 'urgent' as const, createdAt: now, technicianName: t('sample.tech2') },
+    { id: 'c', title: t('sample.3.title'), location: t('sample.3.location'), status: 'completed' as const, priority: 'low' as const, createdAt: now, technicianName: t('sample.tech1') }
+  ]
+
+  return (
+    <div className="auth__demo" data-paused={paused}>
+      <div className="auth__demo-stage" aria-hidden="true">
+        {sample.map(issue => <IssueStrip key={issue.id} issue={issue} />)}
+      </div>
+      <button type="button" className="auth__motion" aria-pressed={paused} onClick={() => setPaused(!paused)}>
+        <Icon name={paused ? 'play' : 'pause'} size={14} />
+        {t(paused ? 'auth.resumeMotion' : 'auth.pauseMotion')}
+      </button>
+    </div>
   )
 }

@@ -1,5 +1,7 @@
 // small hand drawn icon set, one stroke weight everywhere
 const paths: Record<string, string> = {
+  play: 'M8 5l11 7-11 7V5Z',
+  pause: 'M8 5v14M16 5v14',
   bell: 'M6 8a6 6 0 0 1 12 0v5l2 3H4l2-3V8M10 19a2 2 0 0 0 4 0',
   plus: 'M12 5v14M5 12h14',
   check: 'm5 12 4 4L19 7',

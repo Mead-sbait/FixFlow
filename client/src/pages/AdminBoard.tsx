@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { useEffect, useMemo, useState, type DragEvent } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import type { AppDispatch, RootState } from '../app/store'
@@ -25,7 +26,7 @@ const UNASSIGNED = 'unassigned'
 // the whole board at once: one column per technician, strips move by drag or by the menu on each strip
 export function AdminBoard() {
   const dispatch = useDispatch<AppDispatch>()
-  const { t } = useT()
+  const { t, errorMessage } = useT()
   const token = useSelector((state: RootState) => state.auth.token)
   const admin = useSelector((state: RootState) => state.admin)
   const [showDone, setShowDone] = useState(false)
@@ -116,7 +117,7 @@ export function AdminBoard() {
       {admin.error && (
         <div className="notice notice--error" role="alert" style={{ marginBottom: 16 }}>
           <Icon name="alert" size={16} />
-          <span>{admin.error}</span>
+          <span>{errorMessage(admin.error)}</span>
           <button type="button" className="close" onClick={() => dispatch(clearAdminError())} aria-label={t('common.dismiss')}><Icon name="x" size={14} /></button>
         </div>
       )}
@@ -185,6 +186,7 @@ export function AdminBoard() {
                         onDragEnd={() => { setDragging(null); setOver(null) }}
                       >
                         <div className="strip__menu">
+                          <Link className="btn btn--secondary btn--sm" to={`/admin/issues/${issue.id}`}>{t('issue.details')}</Link>
                           <select
                             className="select select--sm"
                             aria-label={t('priority.for', { title: issue.title })}
@@ -198,12 +200,12 @@ export function AdminBoard() {
                             <select
                               className="select select--sm"
                               aria-label={t('board.moveLabel', { title: issue.title })}
-                              value=""
+                              value={issue.technician?.id ?? ''}
                               disabled={admin.savingId === issue.id}
-                              onChange={(event) => { if (event.target.value) void move(issue.id, event.target.value) }}
+                              onChange={(event) => { if (event.target.value && event.target.value !== issue.technician?.id) void move(issue.id, event.target.value) }}
                             >
-                              <option value="">{t('board.moveTo')}</option>
-                              {admin.technicians.filter((item) => item.id !== issue.technician?.id).map((technician) => (
+                              <option value="" disabled>{t('board.moveTo')}</option>
+                              {admin.technicians.map((technician) => (
                                 <option key={technician.id} value={technician.id}>{technician.name}</option>
                               ))}
                             </select>

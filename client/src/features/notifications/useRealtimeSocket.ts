@@ -128,6 +128,8 @@ export function useRealtimeSocket()
             refreshNotifications()
             refreshIssues()
             refreshMine()
+            // Invalidate every mounted comments view, including admin details.
+            dispatch(commentEventReceived('*'))
         }
 
         // Socket listeners

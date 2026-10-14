@@ -1,3 +1,4 @@
+
 {
   "name": "fixflow-server",
   "private": true,
@@ -9,11 +10,11 @@
     "start": "node dist/index.js",
     "lint": "eslint src",
     "seed": "tsx src/scripts/seed.ts",
-    "test": "tsx --test src/models/models.test.ts src/services/admin.service.test.ts src/sockets/emitter.test.ts src/scripts/e2e-target.test.ts",
+    "test": "tsx --test src/models/models.test.ts src/services/admin.service.test.ts src/services/issue.service.test.ts src/sockets/emitter.test.ts src/scripts/e2e-target.test.ts",
     "cleanup:e2e": "tsx src/scripts/cleanup-e2e.ts"
   },
   "dependencies": {
-    "bcrypt": "^5.1.1",
+    "bcrypt": "^6.0.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
@@ -23,7 +24,7 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
-    "@types/bcrypt": "^5.0.2",
+    "@types/bcrypt": "^6.0.0",
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
     "@types/jsonwebtoken": "^9.0.7",

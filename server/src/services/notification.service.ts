@@ -66,7 +66,7 @@ export async function markNotificationAsRead(
             $set: { isRead: true },
         },
         {
-            new: true,
+            returnDocument: 'after',
         }
     )
 

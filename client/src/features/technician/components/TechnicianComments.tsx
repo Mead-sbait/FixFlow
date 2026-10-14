@@ -1,6 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
+import { createUserComment, getUserComments } from '../../issues/issuesApi'
 import { createTechnicianComment, getTechnicianComments } from '../technicianApi'
+import { getAdminComments } from '../../admin/adminApi'
 import type { TechnicianComment } from '../technician.types'
 import { useSelector } from 'react-redux'
 import type { RootState } from '../../../app/store'
@@ -11,12 +13,15 @@ import { formatDate } from '../../../lib/roles'
 type Props = {
     token: string
     issueId: string
+    readOnly?: boolean
+    reporter?: boolean
 }
 
-export function TechnicianComments({ token, issueId }: Props)
+export function TechnicianComments({ token, issueId, readOnly = false, reporter = false }: Props)
 {
     const { t, locale } = useT()
-    const commentsRevision = useSelector((state: RootState) => state.technician.commentsRevision[issueId] ?? 0)
+    const commentsRevision = useSelector((state: RootState) => (state.technician.commentsRevision[issueId] ?? 0) + (state.technician.commentsRevision['*'] ?? 0))
+    const requestVersion = useRef(0)
     const [comments, setComments] = useState<TechnicianComment[]>([])
     const [message, setMessage] = useState('')
     const [isInternal, setIsInternal] = useState(false)
@@ -26,14 +31,15 @@ export function TechnicianComments({ token, issueId }: Props)
 
     useEffect(() => {
         let active = true
+        const version = ++requestVersion.current
 
         async function loadComments() {
             setLoading(true)
             setError(null)
 
             try {
-                const result = await getTechnicianComments(token, issueId)
-                if (active) setComments(result)
+                const result = await (reporter ? getUserComments(token, issueId) : readOnly ? getAdminComments(token, issueId) : getTechnicianComments(token, issueId))
+                if (active && version === requestVersion.current) setComments(reporter ? result.filter(comment => !comment.isInternal) : result)
             } catch {
                 if (active) setError('load')
             } finally {
@@ -46,19 +52,22 @@ export function TechnicianComments({ token, issueId }: Props)
         return () => {
             active = false
         }
-    }, [token, issueId, commentsRevision])
+    }, [token, issueId, commentsRevision, readOnly, reporter])
 
     const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault()
 
         const trimmedMessage = message.trim()
-        if (!trimmedMessage || submitting) return
+        if (readOnly || !trimmedMessage || submitting) return
 
         setSubmitting(true)
         setError(null)
 
         try {
-            const newComment = await createTechnicianComment(token, issueId, { message: trimmedMessage, isInternal })
+            const newComment = await (reporter ? createUserComment(token, issueId, trimmedMessage) : createTechnicianComment(token, issueId, { message: trimmedMessage, isInternal }))
+            // A GET started before this write must not overwrite the saved reply.
+            requestVersion.current += 1
+            setLoading(false)
             // the socket refetch can race with this, so never add the same comment twice
             setComments((previous) =>
                 previous.some((comment) => comment.id === newComment.id)
@@ -87,7 +96,7 @@ export function TechnicianComments({ token, issueId }: Props)
             {loading ? (
                 <p className="loading">{t('common.loading')}</p>
             ) : comments.length === 0 ? (
-                <p className="muted">{t('comments.empty')}</p>
+                <p className="muted">{t(reporter ? 'comments.publicEmpty' : 'comments.empty')}</p>
             ) : (
                 <div className="comments">
                     {comments.map((comment) => (
@@ -104,7 +113,7 @@ export function TechnicianComments({ token, issueId }: Props)
                 </div>
             )}
 
-            <form className="comment-form" onSubmit={handleSubmit}>
+            {!readOnly && <form className="comment-form" onSubmit={handleSubmit}>
                 <div className="field">
                     <label htmlFor="technician-comment">{t('comments.add')}</label>
                     <textarea
@@ -113,7 +122,7 @@ export function TechnicianComments({ token, issueId }: Props)
                         style={{ minHeight: 90 }}
                         value={message}
                         onChange={(event) => setMessage(event.target.value)}
-                        placeholder={isInternal ? t('comments.internalPlaceholder') : t('comments.publicPlaceholder')}
+                        placeholder={reporter ? t('comments.reporterPlaceholder') : isInternal ? t('comments.internalPlaceholder') : t('comments.publicPlaceholder')}
                         maxLength={2000}
                         rows={3}
                         required
@@ -121,16 +130,16 @@ export function TechnicianComments({ token, issueId }: Props)
                 </div>
 
                 <div className="comment-form__row">
-                    <label className="check">
+                    {!reporter && <label className="check">
                         <input type="checkbox" checked={isInternal} onChange={(event) => setIsInternal(event.target.checked)} />
                         {t('comments.internal')}
-                    </label>
+                    </label>}
 
                     <button type="submit" className="btn btn--secondary" disabled={submitting || !message.trim()}>
                         {submitting ? t('comments.sending') : isInternal ? t('comments.submitNote') : t('comments.submit')}
                     </button>
                 </div>
-            </form>
+            </form>}
         </section>
     )
 }

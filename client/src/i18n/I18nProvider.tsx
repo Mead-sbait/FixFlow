@@ -22,7 +22,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   const value = useMemo<I18nValue>(() => ({
     lang,
     dir: dirFor(lang),
-    locale: languages.find((item) => item.code === lang)?.locale ?? 'en-GB',
+    locale: languages.find((item) => item.code === lang)?.locale ?? 'ar',
     setLang,
     t: (key, vars) => translate(lang, key, vars)
   }), [lang, setLang])

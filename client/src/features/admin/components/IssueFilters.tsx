@@ -20,7 +20,7 @@ const priorities: IssuePriority[] = ['low', 'medium', 'high', 'urgent']
 
 // the tray along the top of the board
 export function IssueFilters({ filters, technicians, categories, showStatus = true, showTechnician = true, onChange, onReset, children }: Props) {
-  const { t } = useT()
+  const { t, category: categoryLabel } = useT()
   // keep the text local until the user submits, so we don't hit the API on every key press
   const [search, setSearch] = useState(filters.search)
 
@@ -61,10 +61,13 @@ export function IssueFilters({ filters, technicians, categories, showStatus = tr
         {priorities.map((priority) => <option key={priority} value={priority}>{t(`priority.${priority}`)}</option>)}
       </select>
 
-      <select className="select select--sm" aria-label={t('filters.category')} value={filters.categoryId} onChange={(event) => onChange({ categoryId: event.target.value })}>
+      <div className="category-picker">
+          <Icon name="board" size={18} />
+          <select className="select select--sm category-picker__select" aria-label={t('filters.category')} value={filters.categoryId} onChange={(event) => onChange({ categoryId: event.target.value })}>
         <option value="">{t('filters.anyCategory')}</option>
-        {categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
+        {categories.map((category) => <option key={category.id} value={category.id}>{categoryLabel(category.name)}</option>)}
       </select>
+        </div>
 
       {showTechnician && (
         <select className="select select--sm" aria-label={t('filters.technician')} value={filters.technicianId} onChange={(event) => onChange({ technicianId: event.target.value })}>

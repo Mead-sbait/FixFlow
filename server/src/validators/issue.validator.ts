@@ -7,3 +7,4 @@ export const createIssueSchema = z.object({
   categoryId: z.string().regex(/^[a-f\d]{24}$/i),
   priority: z.enum(['low', 'medium', 'high', 'urgent']).default('medium'),
 }).strict()
+export const createUserCommentSchema = z.object({ message: z.string().trim().min(1).max(2000) }).strict()
