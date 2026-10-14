@@ -8,6 +8,7 @@ import { setSocketServer, userRoom } from './emitter.js'
 export function registerSocketHandlers(io: Server) {
   setSocketServer(io)
 
+  // Socket authentication
   io.use(async (socket, next) => {
     const token: unknown = socket.handshake.auth?.token
 
