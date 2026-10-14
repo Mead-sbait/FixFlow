@@ -1,5 +1,9 @@
 import { expect, test } from '@playwright/test'
-import { adminSession, assignIssue, createIssue, registerTechnician, registerUser, signIn } from './helpers'
+import { adminSession, assignIssue, cleanupTechnicians, createIssue, registerTechnician, registerUser, signIn } from './helpers'
+
+test.afterAll(async ({ request }) => {
+  await cleanupTechnicians(request)
+})
 
 test.describe('live updates', () => {
   test('a new report appears on the admin board without a reload', async ({ page, request }) => {

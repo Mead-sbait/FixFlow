@@ -1,5 +1,9 @@
 import { expect, test } from '@playwright/test'
-import { adminSession, createIssue, registerTechnician, registerUser, signIn } from './helpers'
+import { adminSession, cleanupTechnicians, createIssue, dragStrip, registerTechnician, registerUser, signIn, trackTechnician } from './helpers'
+
+test.afterAll(async ({ request }) => {
+  await cleanupTechnicians(request)
+})
 
 test.describe('the admin board', () => {
   test('a new issue shows up in the unassigned column and can be moved to a technician', async ({ page, request }) => {
@@ -24,7 +28,8 @@ test.describe('the admin board', () => {
 
   test('a strip can be dragged into a technician column', async ({ page, request }) => {
     const admin = await adminSession(request)
-    const tech = await registerTechnician(request, 'Drag Tech')
+    // columns are sorted by name, so this one sits right next to Unassigned and is always on screen
+    const tech = await registerTechnician(request, 'A Drag Tech')
     const reporter = await registerUser(request, 'Drag Reporter')
     const title = `Broken blind ${Date.now()}`
     await createIssue(request, reporter.session, title)
@@ -33,7 +38,8 @@ test.describe('the admin board', () => {
     const strip = page.locator('.column[data-column="unassigned"] .strip', { hasText: title })
     const target = page.locator(`.column[data-column="${tech.session.user.id}"] .column__body`)
     await expect(strip).toBeVisible()
-    await strip.dragTo(target)
+    await expect(target).toBeInViewport()
+    await dragStrip(page, strip, target)
     await expect(page.locator(`.column[data-column="${tech.session.user.id}"] .strip`, { hasText: title })).toBeVisible()
   })
 
@@ -75,6 +81,7 @@ test.describe('the admin board', () => {
     page.once('dialog', (dialog) => dialog.accept())
     await row.getByLabel('Role for Promote Me').selectOption('technician')
     await expect(row.locator('.tag--technician')).toBeVisible()
+    trackTechnician(created.session.user.id)
   })
 
   test('the tally page counts the board', async ({ page, request }) => {

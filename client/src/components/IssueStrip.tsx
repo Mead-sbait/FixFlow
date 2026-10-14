@@ -77,7 +77,13 @@ export function IssueStrip({ issue, to, draggable, saving, settle, children, onD
     <article
       className={classes}
       draggable={draggable}
-      onDragStart={onDragStart}
+      onDragStart={(event) => {
+        // browsers need something in the data transfer to start a drag (firefox refuses otherwise),
+        // and the drop handler reads the id back from here
+        event.dataTransfer.setData('text/plain', issue.id)
+        event.dataTransfer.effectAllowed = 'move'
+        onDragStart?.()
+      }}
       onDragEnd={onDragEnd}
     >
       {body}

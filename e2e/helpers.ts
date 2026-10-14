@@ -1,4 +1,4 @@
-import { expect, type APIRequestContext, type Page } from '@playwright/test'
+import { expect, type APIRequestContext, type Locator, type Page } from '@playwright/test'
 
 export const API = process.env.E2E_API ?? 'http://localhost:3000/api'
 
@@ -31,6 +31,9 @@ export async function registerUser(request: APIRequestContext, name: string, pre
   return { email, session: await login(request, email, PASSWORD) }
 }
 
+// technicians created by the tests, demoted again afterwards so the board does not fill up with columns
+const createdTechnicians: string[] = []
+
 // a technician is a registered user that the admin promoted
 export async function registerTechnician(request: APIRequestContext, name: string) {
   const admin = await adminSession(request)
@@ -40,7 +43,38 @@ export async function registerTechnician(request: APIRequestContext, name: strin
     data: { role: 'technician' },
   })
   expect(response.ok(), 'promote to technician').toBeTruthy()
+  createdTechnicians.push(created.session.user.id)
   return { email: created.email, session: await login(request, created.email, PASSWORD) }
+}
+
+// for technicians promoted some other way (for example through the people page)
+export function trackTechnician(userId: string) {
+  createdTechnicians.push(userId)
+}
+
+// html5 drag and drop needs a real sequence of mouse moves before chrome starts the drag
+export async function dragStrip(page: Page, strip: Locator, target: Locator) {
+  const from = await strip.boundingBox()
+  const to = await target.boundingBox()
+  if (!from || !to) throw new Error('strip or target not on screen')
+  await page.mouse.move(from.x + from.width / 2, from.y + 20)
+  await page.mouse.down()
+  await page.mouse.move(from.x + from.width / 2 + 10, from.y + 30, { steps: 5 })
+  await page.mouse.move(to.x + to.width / 2, to.y + 40, { steps: 15 })
+  await page.mouse.move(to.x + to.width / 2, to.y + 50, { steps: 5 })
+  await page.mouse.up()
+}
+
+// call from test.afterAll in every spec that uses registerTechnician
+export async function cleanupTechnicians(request: APIRequestContext) {
+  if (createdTechnicians.length === 0) return
+  const admin = await adminSession(request)
+  for (const id of createdTechnicians.splice(0)) {
+    await request.patch(`${API}/admin/users/${id}/role`, {
+      headers: { Authorization: `Bearer ${admin.token}` },
+      data: { role: 'user' },
+    })
+  }
 }
 
 export async function firstCategoryId(request: APIRequestContext, session: Session) {

@@ -490,7 +490,7 @@ All text lives in `client/src/i18n/en.ts`, `he.ts` and `ar.ts` as one flat key l
 | `npm run test:e2e` | Playwright, drives the real app in Chrome: register, sign in, role guards, report an issue, admin board drag and drop and the strip menu, list actions, people page, technician start / comment / complete, live socket updates, language switching and RTL, phone layouts | the app running (`npm run dev`), the seeded admin from `server/.env`, Google Chrome installed |
 | `npm run lint` and `npm run build` | types and style on both sides | nothing running |
 
-The e2e suite creates its own throwaway accounts (`*@e2e.local`) through the API, so it can run against a development database any number of times. Reports and traces for failed runs land in `test-results/`.
+The e2e suite runs one test at a time (they share one database and one socket server) and creates its own throwaway accounts (`*@e2e.local`) through the API. When the run ends it deletes those accounts and everything they created, so it can run against a development database any number of times; `npm run cleanup:e2e --prefix server` does the same by hand. Reports and traces for failed runs land in `test-results/`.
 
 ---
 

@@ -23,10 +23,15 @@ process.env.E2E_API ??= 'http://localhost:3000/api'
 
 export default defineConfig({
   testDir: 'e2e',
+  globalTeardown: './e2e/global-teardown.ts',
   timeout: 30_000,
   expect: { timeout: 8_000 },
+  // one worker: the tests share one database and one socket server, and parallel runs
+  // flood the board with events while another test is mid-drag
   fullyParallel: false,
-  retries: process.env.CI ? 1 : 0,
+  workers: 1,
+  // browser tests get one retry: a drag or a socket round trip can be late without anything being broken
+  retries: 1,
   reporter: process.env.CI ? 'github' : 'list',
   use: {
     baseURL: 'http://localhost:5173',

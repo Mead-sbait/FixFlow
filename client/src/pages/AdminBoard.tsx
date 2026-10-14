@@ -158,7 +158,12 @@ export function AdminBoard() {
                 </div>
                 <div
                   className={over === columnId && !isUnassigned ? 'column__body column__body--over' : 'column__body'}
-                  onDragOver={(event) => { if (!isUnassigned) { event.preventDefault(); setOver(columnId) } }}
+                  onDragOver={(event) => {
+                    if (isUnassigned) return
+                    event.preventDefault()
+                    event.dataTransfer.dropEffect = 'move'
+                    if (over !== columnId) setOver(columnId)
+                  }}
                   onDragLeave={() => setOver((current) => (current === columnId ? null : current))}
                   onDrop={(event) => onDrop(event, columnId)}
                 >

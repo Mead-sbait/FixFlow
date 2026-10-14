@@ -1,5 +1,9 @@
 import { expect, test } from '@playwright/test'
-import { assignIssue, createIssue, registerTechnician, registerUser, signIn } from './helpers'
+import { assignIssue, cleanupTechnicians, createIssue, registerTechnician, registerUser, signIn } from './helpers'
+
+test.afterAll(async ({ request }) => {
+  await cleanupTechnicians(request)
+})
 
 test.describe('the technician column', () => {
   test('an assigned issue is started, commented on and completed', async ({ page, request }) => {
