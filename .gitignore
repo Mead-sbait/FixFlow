@@ -10,3 +10,5 @@ client/vite.config.d.ts
 .DS_Store
 work/
 outputs/
+test-results/
+playwright-report/
