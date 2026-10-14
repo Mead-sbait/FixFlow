@@ -1,5 +1,6 @@
-import { Category, Issue } from '../models/index.js'
 import { isValidObjectId } from 'mongoose'
+import { Category, Issue } from '../models/index.js'
+import { emitToAdmins } from '../sockets/emitter.js'
 
 type CreateIssueInput = {
   title: string
@@ -28,8 +29,11 @@ export async function createIssue(
     priority: input.priority,
     reporterId,
     status: 'open',
-  
+
   })
+
+  // admins watching the queue get the new issue without refreshing
+  emitToAdmins('issue:created', { issueId: issue._id.toString() })
 
   return { type: 'created', issue: issue.toJSON() } as const
 }

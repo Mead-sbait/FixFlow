@@ -337,6 +337,16 @@ npm run dev
 | Backend API | http://localhost:3000/api |
 | Health Check | http://localhost:3000/api/health |
 
+### 6. Run the Tests
+
+```bash
+npm test
+```
+
+Runs the client unit tests (vitest) and the server unit tests (node:test). Neither needs MongoDB running.
+
+---
+
 ---
 
 # 🔌 API Overview
