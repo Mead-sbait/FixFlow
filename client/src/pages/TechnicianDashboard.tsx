@@ -4,9 +4,11 @@ import type { AppDispatch, RootState } from '../app/store'
 import { Icon } from '../components/Icon'
 import { IssueStrip } from '../components/IssueStrip'
 import { fetchTechnicianIssues } from '../features/technician/technicianSlice'
+import { useT } from '../i18n'
 
 export function TechnicianDashboard() {
     const dispatch = useDispatch<AppDispatch>()
+    const { t } = useT()
     const [showDone, setShowDone] = useState(false)
 
     const token = useSelector((state: RootState) => state.auth.token)
@@ -28,15 +30,15 @@ export function TechnicianDashboard() {
         <main className="page">
             <div className="page__head">
                 <div>
-                    <h1><span className="marker marker--blue">{user?.name.split(' ')[0]}'s column</span></h1>
-                    <p>Strips the admin moved under your name. Start one, finish it, next.</p>
+                    <h1><span className="marker marker--blue">{t('tech.title', { name: user?.name.split(' ')[0] ?? '' })}</span></h1>
+                    <p>{t('tech.lead')}</p>
                 </div>
-                <div className="chip-row" role="group" aria-label="Show">
+                <div className="chip-row" role="group" aria-label={t('tech.show')}>
                     <button type="button" className="chip" aria-pressed={!showDone} onClick={() => setShowDone(false)}>
-                        To do <span className="tabular">{active.length}</span>
+                        {t('tech.toDo')} <span className="tabular">{active.length}</span>
                     </button>
                     <button type="button" className="chip" aria-pressed={showDone} onClick={() => setShowDone(true)}>
-                        Done <span className="tabular">{done.length}</span>
+                        {t('tech.done')} <span className="tabular">{done.length}</span>
                     </button>
                 </div>
             </div>
@@ -48,17 +50,17 @@ export function TechnicianDashboard() {
             )}
 
             {loading && issues.length === 0 ? (
-                <div className="skeleton" aria-busy="true" aria-label="Loading"><i /><i /><i /></div>
+                <div className="skeleton" aria-busy="true" aria-label={t('common.loading')}><i /><i /><i /></div>
             ) : visible.length === 0 ? (
                 <div className="sheet">
                     <div className="empty">
                         <Icon name="wrench" size={36} />
-                        <h3>{showDone ? 'Nothing finished yet' : 'Your column is empty'}</h3>
-                        <p>{showDone ? 'Completed jobs land here.' : 'When an admin assigns you something it appears here right away.'}</p>
+                        <h3>{showDone ? t('tech.emptyDoneTitle') : t('tech.emptyTitle')}</h3>
+                        <p>{showDone ? t('tech.emptyDoneText') : t('tech.emptyText')}</p>
                     </div>
                 </div>
             ) : (
-                <div className="board" style={{ gridAutoFlow: 'row', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', overflow: 'visible' }}>
+                <div className="strip-grid">
                     {visible.map((issue) => (
                         <IssueStrip
                             key={issue.id}

@@ -16,6 +16,7 @@ import {
   setFilters
 } from '../features/admin/adminSlice'
 import type { AdminIssue } from '../features/admin/admin.types'
+import { useT } from '../i18n'
 import type { IssuePriority } from '../types'
 
 const priorities: IssuePriority[] = ['low', 'medium', 'high', 'urgent']
@@ -24,6 +25,7 @@ const UNASSIGNED = 'unassigned'
 // the whole board at once: one column per technician, strips move by drag or by the menu on each strip
 export function AdminBoard() {
   const dispatch = useDispatch<AppDispatch>()
+  const { t } = useT()
   const token = useSelector((state: RootState) => state.auth.token)
   const admin = useSelector((state: RootState) => state.admin)
   const [showDone, setShowDone] = useState(false)
@@ -86,8 +88,8 @@ export function AdminBoard() {
 
   const changeStatus = async (issue: AdminIssue, status: 'open' | 'cancelled') => {
     const question = status === 'cancelled'
-      ? `Cancel "${issue.title}"? It stays on the board, struck through.`
-      : `Put "${issue.title}" back on the board?`
+      ? t('board.confirmCancel', { title: issue.title })
+      : t('board.confirmReopen', { title: issue.title })
     if (!window.confirm(question)) return
     const result = await dispatch(changeIssueStatus({ token, issueId: issue.id, status }))
     if (changeIssueStatus.fulfilled.match(result)) dispatch(fetchAdminStats(token))
@@ -95,18 +97,18 @@ export function AdminBoard() {
 
   const stats = admin.stats
   const columnOrder = [UNASSIGNED, ...admin.technicians.map((technician) => technician.id)]
-  const nameOf = (id: string) => (id === UNASSIGNED ? 'Unassigned' : admin.technicians.find((t) => t.id === id)?.name ?? 'Unknown')
+  const nameOf = (id: string) => (id === UNASSIGNED ? t('board.unassigned') : admin.technicians.find((item) => item.id === id)?.name ?? t('common.unknown'))
 
   return (
     <main className="page page--full">
       <div className="page__head">
         <div>
-          <h1><span className="marker marker--blue">The board</span></h1>
-          <p>Drag a strip under a technician to assign it. Red column is waiting on you.</p>
+          <h1><span className="marker marker--blue">{t('board.title')}</span></h1>
+          <p>{t('board.lead')}</p>
         </div>
         <div className="chip-row">
           <button type="button" className="chip" aria-pressed={showDone} onClick={() => setShowDone((value) => !value)}>
-            <Icon name="check" size={14} /> Show done
+            <Icon name="check" size={14} /> {t('board.showDone')}
           </button>
         </div>
       </div>
@@ -115,7 +117,7 @@ export function AdminBoard() {
         <div className="notice notice--error" role="alert" style={{ marginBottom: 16 }}>
           <Icon name="alert" size={16} />
           <span>{admin.error}</span>
-          <button type="button" className="close" onClick={() => dispatch(clearAdminError())} aria-label="Dismiss"><Icon name="x" size={14} /></button>
+          <button type="button" className="close" onClick={() => dispatch(clearAdminError())} aria-label={t('common.dismiss')}><Icon name="x" size={14} /></button>
         </div>
       )}
 
@@ -130,14 +132,14 @@ export function AdminBoard() {
       >
         {stats && (
           <span className="board-tray__count">
-            <strong className={stats.unassigned ? 'priority-word--urgent' : undefined}>{stats.unassigned} unassigned</strong>
-            {' · '}{stats.urgent} urgent · {stats.inProgress} in progress
+            <strong className={stats.unassigned ? 'priority-word--urgent' : undefined}>{t('board.counts', { unassigned: stats.unassigned })}</strong>
+            {' · '}{t('board.countsRest', { urgent: stats.urgent, inProgress: stats.inProgress })}
           </span>
         )}
       </IssueFilters>
 
       {admin.loadingIssues && admin.issues.length === 0 ? (
-        <div className="skeleton" aria-busy="true" aria-label="Loading"><i /><i /><i /></div>
+        <div className="skeleton" aria-busy="true" aria-label={t('common.loading')}><i /><i /><i /></div>
       ) : (
         <div className="board">
           {columnOrder.map((columnId) => {
@@ -147,10 +149,11 @@ export function AdminBoard() {
               <section
                 key={columnId}
                 className="column"
-                aria-label={`${nameOf(columnId)}, ${strips.length} issues`}
+                data-column={columnId}
+                aria-label={t('board.columnLabel', { name: nameOf(columnId), count: strips.length })}
               >
                 <div className="column__head">
-                  <h2 className={isUnassigned ? 'marker marker--red' : 'marker marker--blue'} style={{ fontSize: 'var(--fs-18)' }}>{nameOf(columnId)}</h2>
+                  <h2 className={isUnassigned ? 'marker marker--red column__title' : 'marker marker--blue column__title'}>{nameOf(columnId)}</h2>
                   <span className="count tabular">{strips.length}</span>
                 </div>
                 <div
@@ -161,7 +164,7 @@ export function AdminBoard() {
                 >
                   {strips.length === 0 && (
                     <div className="column__empty">
-                      {isUnassigned ? 'Nothing waiting. Nice.' : `Drop a strip here to give it to ${nameOf(columnId).split(' ')[0]}.`}
+                      {isUnassigned ? t('board.nothingWaiting') : t('board.dropHere', { name: nameOf(columnId).split(' ')[0] })}
                     </div>
                   )}
                   {strips.map((issue) => {
@@ -179,33 +182,33 @@ export function AdminBoard() {
                         <div className="strip__menu">
                           <select
                             className="select select--sm"
-                            aria-label={`Priority for ${issue.title}`}
+                            aria-label={t('priority.for', { title: issue.title })}
                             value={issue.priority}
                             disabled={closed || admin.savingId === issue.id}
                             onChange={(event) => changePriority(issue.id, event.target.value as IssuePriority)}
                           >
-                            {priorities.map((priority) => <option key={priority} value={priority}>{priority}</option>)}
+                            {priorities.map((priority) => <option key={priority} value={priority}>{t(`priority.${priority}`)}</option>)}
                           </select>
                           {!closed && (
                             <select
                               className="select select--sm"
-                              aria-label={`Move ${issue.title} to`}
-                              value={issue.technician?.id ?? ''}
+                              aria-label={t('board.moveLabel', { title: issue.title })}
+                              value=""
                               disabled={admin.savingId === issue.id}
                               onChange={(event) => { if (event.target.value) void move(issue.id, event.target.value) }}
                             >
-                              <option value="">Move to…</option>
-                              {admin.technicians.filter((t) => t.id !== issue.technician?.id).map((technician) => (
+                              <option value="">{t('board.moveTo')}</option>
+                              {admin.technicians.filter((item) => item.id !== issue.technician?.id).map((technician) => (
                                 <option key={technician.id} value={technician.id}>{technician.name}</option>
                               ))}
                             </select>
                           )}
                           {closed ? (
-                            <button type="button" className="btn btn--secondary btn--sm" onClick={() => changeStatus(issue, 'open')} aria-label={`Reopen ${issue.title}`}>
-                              <Icon name="undo" size={14} /> Reopen
+                            <button type="button" className="btn btn--secondary btn--sm" onClick={() => changeStatus(issue, 'open')} aria-label={t('board.reopenLabel', { title: issue.title })}>
+                              <Icon name="undo" size={14} /> {t('board.reopen')}
                             </button>
                           ) : (
-                            <button type="button" className="icon-button" style={{ marginLeft: 'auto', color: 'var(--red-ink)' }} onClick={() => changeStatus(issue, 'cancelled')} aria-label={`Cancel ${issue.title}`} title="Cancel issue">
+                            <button type="button" className="icon-button icon-button--danger" onClick={() => changeStatus(issue, 'cancelled')} aria-label={t('board.cancelLabel', { title: issue.title })} title={t('board.cancelIssue')}>
                               <Icon name="ban" size={16} />
                             </button>
                           )}

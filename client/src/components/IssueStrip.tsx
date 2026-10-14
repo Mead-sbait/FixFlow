@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import type { IssuePriority, IssueStatus } from '../types'
-import { formatDate, statusLabel } from '../lib/roles'
+import { useT } from '../i18n'
+import { formatDate } from '../lib/roles'
 import { Icon } from './Icon'
 
 export type StripIssue = {
@@ -28,11 +29,13 @@ type Props = {
 }
 
 export function StatusTag({ status }: { status: IssueStatus }) {
-  return <span className={`tag tag--${status}`}>{statusLabel[status] ?? status}</span>
+  const { t } = useT()
+  return <span className={`tag tag--${status}`}>{t(`status.${status}`)}</span>
 }
 
 // one magnetic strip on the board, the same anatomy everywhere it shows up
 export function IssueStrip({ issue, to, draggable, saving, settle, children, onDragStart, onDragEnd }: Props) {
+  const { t, locale } = useT()
   const done = issue.status === 'completed' || issue.status === 'cancelled'
   const classes = [
     'strip',
@@ -45,7 +48,7 @@ export function IssueStrip({ issue, to, draggable, saving, settle, children, onD
   const body = (
     <>
       <div className="strip__top">
-        <span className={`magnet magnet--${issue.priority}`} title={`${issue.priority} priority`} />
+        <span className={`magnet magnet--${issue.priority}`} title={t(`priority.${issue.priority}`)} />
         <span className="strip__title">
           {issue.status === 'cancelled' ? <span className="struck">{issue.title}</span> : issue.title}
         </span>
@@ -59,8 +62,8 @@ export function IssueStrip({ issue, to, draggable, saving, settle, children, onD
         <StatusTag status={issue.status} />
         {issue.categoryName && <span>{issue.categoryName}</span>}
         {issue.technicianName && <span>{issue.technicianName}</span>}
-        {issue.reporterName && <span>by {issue.reporterName}</span>}
-        <span className="tabular">{formatDate(issue.createdAt)}</span>
+        {issue.reporterName && <span>{t('common.by', { name: issue.reporterName })}</span>}
+        <span className="tabular">{formatDate(issue.createdAt, locale)}</span>
       </div>
       {children}
     </>

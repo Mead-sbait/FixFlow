@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from 'react-redux'
 
 import type { AppDispatch, RootState } from '../../../app/store'
 import { Icon } from '../../../components/Icon'
+import { useT } from '../../../i18n'
 import { formatDate } from '../../../lib/roles'
 
 import {
@@ -14,6 +15,7 @@ import {
 export function NotificationsCenter()
 {
     const dispatch = useDispatch<AppDispatch>()
+    const { t, locale } = useT()
     const [isOpen, setIsOpen] = useState(false)
     const root = useRef<HTMLDivElement>(null)
 
@@ -70,7 +72,7 @@ export function NotificationsCenter()
                 type="button"
                 className="icon-button"
                 onClick={() => setIsOpen(!isOpen)}
-                aria-label={`Notifications, ${unreadCount} unread`}
+                aria-label={t('notif.label', { count: unreadCount })}
                 aria-expanded={isOpen}
                 aria-controls="notifications-panel"
             >
@@ -79,10 +81,10 @@ export function NotificationsCenter()
             </button>
 
             {isOpen && (
-                <div id="notifications-panel" className="notif__panel" role="dialog" aria-label="Notifications">
+                <div id="notifications-panel" className="notif__panel" role="dialog" aria-label={t('notif.title')}>
                     <div className="notif__head">
-                        <h2>Notifications</h2>
-                        <button type="button" className="icon-button" onClick={() => setIsOpen(false)} aria-label="Close notifications">
+                        <h2>{t('notif.title')}</h2>
+                        <button type="button" className="icon-button" onClick={() => setIsOpen(false)} aria-label={t('common.close')}>
                             <Icon name="x" size={16} />
                         </button>
                     </div>
@@ -93,10 +95,10 @@ export function NotificationsCenter()
                         </div>
                     )}
 
-                    {loading && items.length === 0 && <p className="notif__empty">Loading…</p>}
+                    {loading && items.length === 0 && <p className="notif__empty">{t('common.loading')}</p>}
 
                     {!loading && items.length === 0 && (
-                        <p className="notif__empty">Nothing yet. You will hear when a strip of yours moves.</p>
+                        <p className="notif__empty">{t('notif.empty')}</p>
                     )}
 
                     {items.length > 0 && (
@@ -108,28 +110,27 @@ export function NotificationsCenter()
                                 >
                                     <div className="row">
                                         <Icon name={notification.type.includes('cancel') ? 'ban' : notification.type.includes('comment') ? 'note' : 'pin'} size={16} />
-                                        <time dateTime={notification.createdAt}>{formatDate(notification.createdAt, true)}</time>
-                                        {!notification.isRead && <span className="tag tag--assigned">New</span>}
+                                        <time dateTime={notification.createdAt}>{formatDate(notification.createdAt, locale, true)}</time>
+                                        {!notification.isRead && <span className="tag tag--assigned">{t('notif.new')}</span>}
                                     </div>
 
                                     <p>{notification.message}</p>
 
                                     <div className="row">
                                         {notification.issueId && (
-                                            <Link to={issueLink(notification.issueId)} onClick={() => setIsOpen(false)} style={{ fontSize: 'var(--fs-13)', fontWeight: 700 }}>
-                                                View issue
+                                            <Link to={issueLink(notification.issueId)} onClick={() => setIsOpen(false)} className="notif__link">
+                                                {t('notif.view')}
                                             </Link>
                                         )}
 
                                         {!notification.isRead && (
                                             <button
                                                 type="button"
-                                                className="btn btn--ghost btn--sm"
-                                                style={{ marginLeft: 'auto' }}
+                                                className="btn btn--ghost btn--sm notif__mark"
                                                 disabled={Boolean(markingRequests[notification.id])}
                                                 onClick={() => handleMarkAsRead(notification.id)}
                                             >
-                                                {markingRequests[notification.id] ? 'Updating…' : 'Mark as read'}
+                                                {markingRequests[notification.id] ? t('notif.updating') : t('notif.markRead')}
                                             </button>
                                         )}
                                     </div>

@@ -16,11 +16,13 @@ import {
   setFilters
 } from '../features/admin/adminSlice'
 import type { AdminIssue } from '../features/admin/admin.types'
+import { useT } from '../i18n'
 import type { IssuePriority } from '../types'
 
 // every issue as a row, with paging. Same actions as the board, for when you want to search and sort through history
 export function AdminList() {
   const dispatch = useDispatch<AppDispatch>()
+  const { t } = useT()
   const token = useSelector((state: RootState) => state.auth.token)
   const admin = useSelector((state: RootState) => state.admin)
 
@@ -49,8 +51,8 @@ export function AdminList() {
 
   const handleStatus = async (issue: AdminIssue, status: 'open' | 'cancelled') => {
     const question = status === 'cancelled'
-      ? `Cancel "${issue.title}"? It stays in the list, struck through.`
-      : `Reopen "${issue.title}"?`
+      ? t('list.confirmCancel', { title: issue.title })
+      : t('list.confirmReopen', { title: issue.title })
     if (!window.confirm(question)) return
     const result = await dispatch(changeIssueStatus({ token, issueId: issue.id, status }))
     if (changeIssueStatus.fulfilled.match(result)) dispatch(fetchAdminStats(token))
@@ -62,8 +64,8 @@ export function AdminList() {
     <main className="page">
       <div className="page__head">
         <div>
-          <h1><span className="marker marker--blue">All issues</span></h1>
-          <p>The full record, including what is finished and what was cancelled.</p>
+          <h1><span className="marker marker--blue">{t('list.title')}</span></h1>
+          <p>{t('list.lead')}</p>
         </div>
       </div>
 
@@ -71,7 +73,7 @@ export function AdminList() {
         <div className="notice notice--error" role="alert" style={{ marginBottom: 16 }}>
           <Icon name="alert" size={16} />
           <span>{admin.error}</span>
-          <button type="button" className="close" onClick={() => dispatch(clearAdminError())} aria-label="Dismiss"><Icon name="x" size={14} /></button>
+          <button type="button" className="close" onClick={() => dispatch(clearAdminError())} aria-label={t('common.dismiss')}><Icon name="x" size={14} /></button>
         </div>
       )}
 
@@ -82,17 +84,19 @@ export function AdminList() {
         onChange={(changes) => dispatch(setFilters(changes))}
         onReset={() => dispatch(resetFilters())}
       >
-        <span className="board-tray__count tabular">{pagination.total} {pagination.total === 1 ? 'issue' : 'issues'}</span>
+        <span className="board-tray__count tabular">
+          {pagination.total === 1 ? t('common.issueCount', { count: 1 }) : t('common.issuesCount', { count: pagination.total })}
+        </span>
       </IssueFilters>
 
       <div className="sheet">
         {admin.loadingIssues && admin.issues.length === 0 ? (
-          <div className="empty"><p className="loading">Loading issues…</p></div>
+          <div className="empty"><p className="loading">{t('common.loading')}</p></div>
         ) : admin.issues.length === 0 ? (
           <div className="empty">
             <Icon name="search" size={36} />
-            <h3>No issues match</h3>
-            <p>Loosen a filter or clear the search.</p>
+            <h3>{t('list.noMatch')}</h3>
+            <p>{t('list.noMatchText')}</p>
           </div>
         ) : (
           <IssueTable
@@ -107,13 +111,13 @@ export function AdminList() {
 
         {pagination.pages > 1 && (
           <div className="sheet__foot">
-            <span>Page {pagination.page} of {pagination.pages}</span>
+            <span>{t('common.pageOf', { page: pagination.page, pages: pagination.pages })}</span>
             <div className="pager">
               <button type="button" className="btn btn--secondary btn--sm" disabled={pagination.page <= 1} onClick={() => dispatch(setFilters({ page: pagination.page - 1 }))}>
-                <Icon name="arrowLeft" size={14} /> Previous
+                <Icon name="arrowLeft" size={14} className="flip-rtl" /> {t('common.previous')}
               </button>
               <button type="button" className="btn btn--secondary btn--sm" disabled={pagination.page >= pagination.pages} onClick={() => dispatch(setFilters({ page: pagination.page + 1 }))}>
-                Next <Icon name="arrowRight" size={14} />
+                {t('common.next')} <Icon name="arrowRight" size={14} className="flip-rtl" />
               </button>
             </div>
           </div>

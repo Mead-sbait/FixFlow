@@ -4,6 +4,7 @@ import type { AppDispatch, RootState } from '../app/store'
 import { Icon } from '../components/Icon'
 import { fetchAdminStats } from '../features/admin/adminSlice'
 import type { AdminStats, CountByName } from '../features/admin/admin.types'
+import { useT } from '../i18n'
 
 type Tone = 'blue' | 'green' | 'red' | 'grey'
 
@@ -30,19 +31,10 @@ function Bars({ title, rows, empty, tone = 'blue' }: { title: string; rows: (Cou
   )
 }
 
-function statusRows(stats: AdminStats): (CountByName & { tone: Tone })[] {
-  return [
-    { id: 'open', name: 'Open', count: stats.open, tone: 'grey' },
-    { id: 'assigned', name: 'Assigned', count: stats.assigned, tone: 'blue' },
-    { id: 'in_progress', name: 'In progress', count: stats.inProgress, tone: 'blue' },
-    { id: 'completed', name: 'Completed', count: stats.completed, tone: 'green' },
-    { id: 'cancelled', name: 'Cancelled', count: stats.cancelled, tone: 'red' }
-  ]
-}
-
 // the tally sheet: how much is on the board, and who is carrying it
 export function AdminStatistics() {
   const dispatch = useDispatch<AppDispatch>()
+  const { t } = useT()
   const token = useSelector((state: RootState) => state.auth.token)
   const { stats, loadingStats, error } = useSelector((state: RootState) => state.admin)
 
@@ -50,32 +42,40 @@ export function AdminStatistics() {
     if (token) dispatch(fetchAdminStats(token))
   }, [dispatch, token])
 
+  const statusRows = (data: AdminStats): (CountByName & { tone: Tone })[] => [
+    { id: 'open', name: t('status.open'), count: data.open, tone: 'grey' },
+    { id: 'assigned', name: t('status.assigned'), count: data.assigned, tone: 'blue' },
+    { id: 'in_progress', name: t('status.in_progress'), count: data.inProgress, tone: 'blue' },
+    { id: 'completed', name: t('status.completed'), count: data.completed, tone: 'green' },
+    { id: 'cancelled', name: t('status.cancelled'), count: data.cancelled, tone: 'red' }
+  ]
+
   return (
     <main className="page">
       <div className="page__head">
         <div>
-          <h1><span className="marker marker--blue">Tally</span></h1>
-          <p>{stats ? `${stats.total} issues ever reported.` : 'Counting the board.'}</p>
+          <h1><span className="marker marker--blue">{t('tally.title')}</span></h1>
+          <p>{stats ? t('tally.lead', { total: stats.total }) : t('tally.counting')}</p>
         </div>
       </div>
 
       {error && <div className="notice notice--error" role="alert" style={{ marginBottom: 16 }}><Icon name="alert" size={16} />{error}</div>}
 
       {loadingStats && !stats ? (
-        <div className="skeleton" aria-busy="true" aria-label="Loading"><i /><i /></div>
+        <div className="skeleton" aria-busy="true" aria-label={t('common.loading')}><i /><i /></div>
       ) : stats && (
         <div className="tally-sheet">
-          <section className="tally-sheet__section tally-sheet__attention" aria-label="Needs attention">
+          <section className="tally-sheet__section tally-sheet__attention" aria-label={t('tally.attention')}>
             <p>
-              <strong className={stats.unassigned ? 'priority-word--urgent' : undefined}>{stats.unassigned}</strong> waiting for a technician
+              <strong className={stats.unassigned ? 'priority-word--urgent' : undefined}>{stats.unassigned}</strong> {t('tally.waiting')}
             </p>
             <p>
-              <strong className={stats.urgent ? 'priority-word--urgent' : undefined}>{stats.urgent}</strong> urgent and still open
+              <strong className={stats.urgent ? 'priority-word--urgent' : undefined}>{stats.urgent}</strong> {t('tally.urgentOpen')}
             </p>
           </section>
-          <Bars title="By status" rows={statusRows(stats)} empty="No issues yet." />
-          <Bars title="By category" rows={stats.byCategory} empty="No issues yet." />
-          <Bars title="Active work per technician" rows={stats.byTechnician} empty="No technician has active work right now." tone="green" />
+          <Bars title={t('tally.byStatus')} rows={statusRows(stats)} empty={t('tally.noIssues')} />
+          <Bars title={t('tally.byCategory')} rows={stats.byCategory} empty={t('tally.noIssues')} />
+          <Bars title={t('tally.perTechnician')} rows={stats.byTechnician} empty={t('tally.noActive')} tone="green" />
         </div>
       )}
     </main>

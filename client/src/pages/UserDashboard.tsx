@@ -5,20 +5,23 @@ import type { AppDispatch, RootState } from '../app/store'
 import { Icon } from '../components/Icon'
 import { IssueStrip } from '../components/IssueStrip'
 import { fetchCategories, fetchMyIssues } from '../features/issues/issuesSlice'
+import { useT } from '../i18n'
+import type { TranslationKey } from '../i18n/en'
 import type { IssueStatus } from '../types'
 
 type Filter = 'active' | 'done' | 'all'
 
-const filters: { key: Filter; label: string }[] = [
-  { key: 'active', label: 'Active' },
-  { key: 'done', label: 'Done' },
-  { key: 'all', label: 'All' }
+const filters: { key: Filter; label: TranslationKey }[] = [
+  { key: 'active', label: 'mine.active' },
+  { key: 'done', label: 'mine.done' },
+  { key: 'all', label: 'mine.all' }
 ]
 
 const closed: IssueStatus[] = ['completed', 'cancelled']
 
 export function UserDashboard() {
   const dispatch = useDispatch<AppDispatch>()
+  const { t } = useT()
   const token = useSelector((state: RootState) => state.auth.token)
   const user = useSelector((state: RootState) => state.auth.user)
   const { items, categories, loading, error } = useSelector((state: RootState) => state.issues)
@@ -53,37 +56,37 @@ export function UserDashboard() {
     <main className="page">
       <div className="page__head">
         <div>
-          <h1><span className="marker marker--blue">{user?.name.split(' ')[0]}'s issues</span></h1>
-          <p>Everything you reported, and where it is on the board.</p>
+          <h1><span className="marker marker--blue">{t('mine.title', { name: user?.name.split(' ')[0] ?? '' })}</span></h1>
+          <p>{t('mine.lead')}</p>
         </div>
         <div className="page__actions">
-          <Link className="btn btn--primary" to="/issues/new"><Icon name="plus" size={16} /> Report an issue</Link>
+          <Link className="btn btn--primary" to="/issues/new"><Icon name="plus" size={16} /> {t('mine.report')}</Link>
         </div>
       </div>
 
       {error && <div className="notice notice--error" role="alert" style={{ marginBottom: 16 }}><Icon name="alert" size={16} />{error}</div>}
 
-      <div className="chip-row" style={{ marginBottom: 18 }} role="group" aria-label="Filter issues">
+      <div className="chip-row" style={{ marginBottom: 18 }} role="group" aria-label={t('mine.filter')}>
         {filters.map((item) => (
           <button key={item.key} type="button" className="chip" aria-pressed={filter === item.key} onClick={() => setFilter(item.key)}>
-            {item.label} <span className="tabular">{counts[item.key]}</span>
+            {t(item.label)} <span className="tabular">{counts[item.key]}</span>
           </button>
         ))}
       </div>
 
       {loading && items.length === 0 ? (
-        <div className="skeleton" aria-busy="true" aria-label="Loading"><i /><i /><i /></div>
+        <div className="skeleton" aria-busy="true" aria-label={t('common.loading')}><i /><i /><i /></div>
       ) : visible.length === 0 ? (
         <div className="sheet">
           <div className="empty">
             <Icon name="pin" size={36} />
-            <h3>{items.length === 0 ? 'Nothing on the board yet' : 'Nothing here'}</h3>
-            <p>{items.length === 0 ? 'Report a problem and it shows up here with its status.' : 'Try another filter.'}</p>
-            {items.length === 0 && <Link className="btn btn--primary" to="/issues/new">Report an issue</Link>}
+            <h3>{items.length === 0 ? t('mine.emptyTitle') : t('mine.nothingHere')}</h3>
+            <p>{items.length === 0 ? t('mine.emptyText') : t('mine.tryFilter')}</p>
+            {items.length === 0 && <Link className="btn btn--primary" to="/issues/new">{t('mine.report')}</Link>}
           </div>
         </div>
       ) : (
-        <div className="board" style={{ gridAutoFlow: 'row', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', overflow: 'visible' }}>
+        <div className="strip-grid">
           {visible.map((issue) => (
             <IssueStrip
               key={issue.id}

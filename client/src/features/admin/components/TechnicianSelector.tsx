@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useT } from '../../../i18n'
 import type { AdminIssue, PersonRef } from '../admin.types'
 
 type Props = {
@@ -10,6 +11,7 @@ type Props = {
 }
 
 export function TechnicianSelector({ issue, technicians, disabled, compact, onAssign }: Props) {
+  const { t } = useT()
   const current = issue.technician?.id ?? ''
   const [selected, setSelected] = useState(current)
 
@@ -20,19 +22,19 @@ export function TechnicianSelector({ issue, technicians, disabled, compact, onAs
   const closed = issue.status === 'completed' || issue.status === 'cancelled'
 
   if (closed) {
-    return <span className="muted">{issue.technician?.name ?? 'Unassigned'}</span>
+    return <span className="muted">{issue.technician?.name ?? t('filters.unassigned')}</span>
   }
 
   return (
     <span className="inline">
       <select
         className={compact ? 'select select--sm' : 'select'}
-        aria-label={`Technician for ${issue.title}`}
+        aria-label={t('list.technicianFor', { title: issue.title })}
         value={selected}
         disabled={disabled}
         onChange={(event) => setSelected(event.target.value)}
       >
-        <option value="">Unassigned</option>
+        <option value="">{t('filters.unassigned')}</option>
         {technicians.map((technician) => (
           <option key={technician.id} value={technician.id}>{technician.name}</option>
         ))}
@@ -43,7 +45,7 @@ export function TechnicianSelector({ issue, technicians, disabled, compact, onAs
         disabled={disabled || !selected || selected === current}
         onClick={() => onAssign(selected)}
       >
-        {current ? 'Move' : 'Assign'}
+        {current ? t('list.move') : t('list.assign')}
       </button>
     </span>
   )

@@ -7,18 +7,10 @@ export function homeFor(role: UserRole | undefined) {
   return '/dashboard'
 }
 
-export const statusLabel: Record<string, string> = {
-  open: 'Open',
-  assigned: 'Assigned',
-  in_progress: 'In progress',
-  completed: 'Completed',
-  cancelled: 'Cancelled'
-}
-
-export function formatDate(value: string, withTime = false) {
+export function formatDate(value: string, locale: string, withTime = false) {
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return ''
-  return date.toLocaleDateString(undefined, withTime
+  return date.toLocaleDateString(locale, withTime
     ? { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }
     : { day: 'numeric', month: 'short' })
 }
