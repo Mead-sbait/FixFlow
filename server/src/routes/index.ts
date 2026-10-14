@@ -3,6 +3,8 @@ import { adminRouter } from './admin.routes.js'
 import { authRouter } from './auth.routes.js'
 import { categoryRouter } from './category.routes.js'
 import { issueRouter } from './issue.routes.js'
+import { technicianRouter } from './technician.routes.js'
+import { notificationRouter } from './notification.routes.js'
 
 export const apiRouter = Router()
 
@@ -12,5 +14,7 @@ apiRouter.get('/health', (_req, res) =>
 
 apiRouter.use('/auth', authRouter)
 apiRouter.use('/issues', issueRouter)
+apiRouter.use('/technician', technicianRouter)
+apiRouter.use('/notifications', notificationRouter)
 apiRouter.use('/admin', adminRouter)
 apiRouter.use('/categories', categoryRouter)
