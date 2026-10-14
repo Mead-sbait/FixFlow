@@ -46,7 +46,9 @@ export function IssueStrip({ issue, to, draggable, saving, settle, children, onD
     <>
       <div className="strip__top">
         <span className={`magnet magnet--${issue.priority}`} title={`${issue.priority} priority`} />
-        <span className={issue.status === 'cancelled' ? 'strip__title struck' : 'strip__title'}>{issue.title}</span>
+        <span className="strip__title">
+          {issue.status === 'cancelled' ? <span className="struck">{issue.title}</span> : issue.title}
+        </span>
         {draggable && <span className="strip__handle" aria-hidden="true"><Icon name="grip" size={16} /></span>}
       </div>
       <span className="strip__location">
