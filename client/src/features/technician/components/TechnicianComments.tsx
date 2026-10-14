@@ -59,7 +59,12 @@ export function TechnicianComments({ token, issueId }: Props)
 
         try {
             const newComment = await createTechnicianComment(token, issueId, { message: trimmedMessage, isInternal })
-            setComments((previous) => [...previous, newComment])
+            // the socket refetch can race with this, so never add the same comment twice
+            setComments((previous) =>
+                previous.some((comment) => comment.id === newComment.id)
+                    ? previous
+                    : [...previous, newComment]
+            )
             setMessage('')
             setIsInternal(false)
         } catch {
