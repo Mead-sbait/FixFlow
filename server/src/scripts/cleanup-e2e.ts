@@ -1,7 +1,16 @@
 import { connectDatabase, disconnectDatabase } from '../config/db.js'
+import { env } from '../config/env.js'
 import { Comment, Issue, IssueStatusHistory, Notification, User } from '../models/index.js'
+import { cleanupAllowed } from './e2e-target.js'
 
 // removes everything the e2e suite created: accounts ending in @e2e.local and whatever points at them
+
+const target = cleanupAllowed(env.mongodbUri, process.env)
+if (!target.ok) {
+  console.error(`e2e cleanup refused: ${target.reason}`)
+  process.exit(2)
+}
+
 try {
   await connectDatabase()
 
@@ -19,7 +28,7 @@ try {
     User.deleteMany({ _id: { $in: userIds } }),
   ])
 
-  console.log(`e2e cleanup: ${removedUsers.deletedCount} accounts, ${removedIssues.deletedCount} issues, ${comments.deletedCount} comments, ${history.deletedCount} history rows, ${notifications.deletedCount} notifications`)
+  console.log(`e2e cleanup (${target.reason}): ${removedUsers.deletedCount} accounts, ${removedIssues.deletedCount} issues, ${comments.deletedCount} comments, ${history.deletedCount} history rows, ${notifications.deletedCount} notifications`)
 } catch (error) {
   console.error('e2e cleanup failed', error)
   process.exitCode = 1

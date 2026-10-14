@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import type { AppDispatch, RootState } from '../app/store'
@@ -22,6 +22,11 @@ export function LoginPage() {
   const [busy, setBusy] = useState(false)
   const notice = (location.state as { notice?: string } | null)?.notice
 
+  // the request in flight, so a slow answer cannot sign someone in after the page is gone
+  // or after a second attempt was started
+  const inFlight = useRef<AbortController | null>(null)
+  useEffect(() => () => inFlight.current?.abort(), [])
+
   if (user) {
     return <Navigate to={homeFor(user.role)} replace />
   }
@@ -36,17 +41,25 @@ export function LoginPage() {
 
   const submit = async (event: FormEvent) => {
     event.preventDefault()
+    inFlight.current?.abort()
+    const controller = new AbortController()
+    inFlight.current = controller
     setBusy(true)
     setError(null)
     try {
-      const result = await login(email.trim(), password)
+      const result = await login(email.trim(), password, controller.signal)
+      if (controller.signal.aborted) return
       dispatch(setCredentials({ token: result.accessToken, user: result.user }))
       const from = (location.state as { from?: string } | null)?.from
       navigate(from && from !== '/login' ? from : homeFor(result.user.role), { replace: true })
     } catch (err) {
+      if (controller.signal.aborted) return
       setError(errorText(err, t('login.failed')))
     } finally {
-      setBusy(false)
+      if (inFlight.current === controller) {
+        inFlight.current = null
+        if (!controller.signal.aborted) setBusy(false)
+      }
     }
   }
 

@@ -14,6 +14,7 @@ type IssuesState = {
   error: string | null
   listRequestId: string | null
   oneRequestId: string | null
+  reportRequestId: string | null
 }
 
 const initialState: IssuesState = {
@@ -25,7 +26,8 @@ const initialState: IssuesState = {
   saving: false,
   error: null,
   listRequestId: null,
-  oneRequestId: null
+  oneRequestId: null,
+  reportRequestId: null
 }
 
 export const fetchMyIssues = createAsyncThunk<UserIssue[], string, { rejectValue: string }>(
@@ -123,17 +125,24 @@ const issuesSlice = createSlice({
         state.categories = action.payload
       })
 
-      .addCase(reportIssue.pending, (state) => {
+      // same guard as the reads: logout and setCredentials reset the slice, so a report that was
+      // still in flight for the previous account no longer matches and is dropped
+      .addCase(reportIssue.pending, (state, action) => {
         state.saving = true
         state.error = null
+        state.reportRequestId = action.meta.requestId
       })
       .addCase(reportIssue.fulfilled, (state, action) => {
+        if (state.reportRequestId !== action.meta.requestId) return
         state.saving = false
+        state.reportRequestId = null
         state.items = [action.payload, ...state.items]
         state.selected = action.payload
       })
       .addCase(reportIssue.rejected, (state, action) => {
+        if (state.reportRequestId !== action.meta.requestId) return
         state.saving = false
+        state.reportRequestId = null
         state.error = action.payload ?? 'Unable to report the issue'
       })
 
