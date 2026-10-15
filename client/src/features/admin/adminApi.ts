@@ -1,3 +1,4 @@
+import type { TechnicianComment } from '../technician/technician.types'
 import { api } from '../../lib/api'
 import type { IssuePriority, UserRole } from '../../types'
 import type {
@@ -65,8 +66,8 @@ export async function updateIssuePriority(token: string, issueId: string, priori
   return response.data
 }
 
-// admins can only cancel an active issue or reopen a closed one
-export async function updateIssueStatus(token: string, issueId: string, status: 'open' | 'cancelled') {
+// Administrators can close, cancel or reopen an issue.
+export async function updateIssueStatus(token: string, issueId: string, status: 'open' | 'cancelled' | 'completed') {
   const response = await api.patch<AdminIssue>(
     `/admin/issues/${issueId}/status`,
     { status },
@@ -86,4 +87,11 @@ export async function getUsers(token: string, filters: UserFilters) {
 export async function updateUserRole(token: string, userId: string, role: UserRole) {
   const response = await api.patch<AdminUser>(`/admin/users/${userId}/role`, { role }, withToken(token))
   return response.data
+}
+
+export async function getAdminIssue(token: string, issueId: string) {
+  return (await api.get<AdminIssue>(`/admin/issues/${issueId}`, withToken(token))).data
+}
+export async function getAdminComments(token: string, issueId: string) {
+  return (await api.get<TechnicianComment[]>(`/admin/issues/${issueId}/comments`, withToken(token))).data
 }

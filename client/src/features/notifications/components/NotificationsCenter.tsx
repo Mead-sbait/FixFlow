@@ -15,7 +15,7 @@ import {
 export function NotificationsCenter()
 {
     const dispatch = useDispatch<AppDispatch>()
-    const { t, locale } = useT()
+    const { t, locale, errorMessage, notification: notificationText } = useT()
     const [isOpen, setIsOpen] = useState(false)
     const root = useRef<HTMLDivElement>(null)
 
@@ -91,7 +91,7 @@ export function NotificationsCenter()
 
                     {error && (
                         <div className="notice notice--error" role="alert" style={{ margin: 12 }}>
-                            <Icon name="alert" size={16} />{error}
+                            <Icon name="alert" size={16} />{errorMessage(error)}
                         </div>
                     )}
 
@@ -114,7 +114,7 @@ export function NotificationsCenter()
                                         {!notification.isRead && <span className="tag tag--assigned">{t('notif.new')}</span>}
                                     </div>
 
-                                    <p>{notification.message}</p>
+                                    <p>{notificationText(notification)}</p>
 
                                     <div className="row">
                                         {notification.issueId && (

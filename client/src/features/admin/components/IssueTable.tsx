@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { Icon } from '../../../components/Icon'
 import { StatusTag } from '../../../components/IssueStrip'
 import { useT } from '../../../i18n'
@@ -18,7 +19,7 @@ type Props = {
 const priorities: IssuePriority[] = ['low', 'medium', 'high', 'urgent']
 
 export function IssueTable({ issues, technicians, savingId, onAssign, onPriorityChange, onStatusChange }: Props) {
-  const { t, locale } = useT()
+  const { t, locale, category } = useT()
 
   return (
     <div className="table-scroll">
@@ -42,8 +43,8 @@ export function IssueTable({ issues, technicians, savingId, onAssign, onPriority
             return (
               <tr key={issue.id} className={saving ? 'is-saving' : undefined}>
                 <td className="cell-title" data-label={t('list.issue')}>
-                  <strong>{issue.status === 'cancelled' ? <span className="struck">{issue.title}</span> : issue.title}</strong>
-                  <span>{issue.category?.name ?? t('common.noCategory')} · {issue.location}</span>
+                  <Link to={`/admin/issues/${issue.id}`}><strong>{issue.status === 'cancelled' ? <span className="struck">{issue.title}</span> : issue.title}</strong></Link>
+                  <span>{category(issue.category?.name)} · {issue.location}</span>
                 </td>
                 <td data-label={t('list.status')}><StatusTag status={issue.status} /></td>
                 <td data-label={t('list.priority')}>

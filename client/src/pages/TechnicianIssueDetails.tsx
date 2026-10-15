@@ -13,7 +13,7 @@ import { formatDate } from '../lib/roles'
 export function TechnicianIssueDetails() {
     const dispatch = useDispatch<AppDispatch>()
     const { id } = useParams<{ id: string }>()
-    const { t, locale } = useT()
+    const { t, locale, errorMessage, category } = useT()
 
     const token = useSelector((state: RootState) => state.auth.token)
     const { selectedIssue, issueLoading, statusUpdating, error } = useSelector((state: RootState) => state.technician)
@@ -38,7 +38,7 @@ export function TechnicianIssueDetails() {
 
             {error && (
                 <div className="notice notice--error" role="alert" style={{ marginBottom: 16 }}>
-                    <Icon name="alert" size={16} />{error}
+                    <Icon name="alert" size={16} />{errorMessage(error)}
                 </div>
             )}
 
@@ -87,7 +87,7 @@ export function TechnicianIssueDetails() {
                             <h2>{t('issue.onStrip')}</h2>
                             <dl className="facts">
                                 <div><dt>{t('issue.location')}</dt><dd>{issue.location}</dd></div>
-                                <div><dt>{t('issue.category')}</dt><dd>{issue.category?.name ?? t('common.noCategory')}</dd></div>
+                                <div><dt>{t('issue.category')}</dt><dd>{category(issue.category?.name)}</dd></div>
                                 <div><dt>{t('issue.priority')}</dt><dd className={`priority-word priority-word--${issue.priority}`}>{t(`priority.${issue.priority}`)}</dd></div>
                                 <div><dt>{t('issue.reporter')}</dt><dd>{issue.reporter?.name ?? t('common.unknown')}<br /><span className="muted" dir="ltr">{issue.reporter?.email}</span></dd></div>
                                 <div><dt>{t('issue.reported')}</dt><dd>{formatDate(issue.createdAt, locale, true)}</dd></div>

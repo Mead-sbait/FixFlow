@@ -6,7 +6,7 @@ import { Icon } from '../components/Icon'
 import { IssueStrip } from '../components/IssueStrip'
 import { fetchCategories, fetchMyIssues } from '../features/issues/issuesSlice'
 import { useT } from '../i18n'
-import type { TranslationKey } from '../i18n/en'
+import type { TranslationKey } from '../i18n/ar'
 import type { IssueStatus } from '../types'
 
 type Filter = 'active' | 'done' | 'all'
@@ -21,7 +21,7 @@ const closed: IssueStatus[] = ['completed', 'cancelled']
 
 export function UserDashboard() {
   const dispatch = useDispatch<AppDispatch>()
-  const { t } = useT()
+  const { t, errorMessage } = useT()
   const token = useSelector((state: RootState) => state.auth.token)
   const user = useSelector((state: RootState) => state.auth.user)
   const { items, categories, loading, error } = useSelector((state: RootState) => state.issues)
@@ -64,7 +64,9 @@ export function UserDashboard() {
         </div>
       </div>
 
-      {error && <div className="notice notice--error" role="alert" style={{ marginBottom: 16 }}><Icon name="alert" size={16} />{error}</div>}
+      <div className="overview"><div className="overview__item"><span>{t('overview.total')}</span><strong>{loading ? '—' : counts.all}</strong></div><div className="overview__item"><span>{t('overview.active')}</span><strong>{loading ? '—' : counts.active}</strong></div><div className="overview__item"><span>{t('overview.closed')}</span><strong>{loading ? '—' : counts.done}</strong></div></div>
+
+      {error && <div className="notice notice--error" role="alert" style={{ marginBottom: 16 }}><Icon name="alert" size={16} />{errorMessage(error)}</div>}
 
       <div className="chip-row" style={{ marginBottom: 18 }} role="group" aria-label={t('mine.filter')}>
         {filters.map((item) => (

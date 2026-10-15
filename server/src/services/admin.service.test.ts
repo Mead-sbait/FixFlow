@@ -53,3 +53,10 @@ test('admin can only cancel active issues and reopen closed ones', () => {
   assert.equal(resolveAdminStatus('completed', 'open', true), 'assigned')
   assert.equal(resolveAdminStatus('assigned', 'open', true), null)
 })
+
+test('admin closes active issues as completed and cannot close an already closed issue', () => {
+  assert.equal(resolveAdminStatus('open', 'completed', false), 'completed')
+  assert.equal(resolveAdminStatus('in_progress', 'completed', true), 'completed')
+  assert.equal(resolveAdminStatus('completed', 'completed', true), null)
+  assert.equal(resolveAdminStatus('cancelled', 'completed', false), null)
+})

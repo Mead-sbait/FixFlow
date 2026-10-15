@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from 'react-redux'
 import type { AppDispatch, RootState } from '../app/store'
 import { Icon } from '../components/Icon'
 import { StatusTag } from '../components/IssueStrip'
+import { TechnicianComments } from '../features/technician/components/TechnicianComments'
 import { StatusSteps } from '../components/StatusSteps'
 import { fetchCategories, fetchMyIssue } from '../features/issues/issuesSlice'
 import { useT } from '../i18n'
@@ -13,7 +14,7 @@ export function IssueDetailsPage() {
   const dispatch = useDispatch<AppDispatch>()
   const { id } = useParams<{ id: string }>()
   const location = useLocation()
-  const { t, locale } = useT()
+  const { t, locale, errorMessage, category } = useT()
   const token = useSelector((state: RootState) => state.auth.token)
   const { selected, categories, loadingOne, error } = useSelector((state: RootState) => state.issues)
   const notice = (location.state as { notice?: string } | null)?.notice
@@ -36,12 +37,12 @@ export function IssueDetailsPage() {
     <main className="page">
       <Link className="back" to="/dashboard"><Icon name="arrowLeft" size={16} className="flip-rtl" /> {t('nav.myIssues')}</Link>
 
-      {notice && <div className="notice notice--success" style={{ marginBottom: 16 }}><Icon name="check" size={16} />{notice}</div>}
+      {notice && <div className="notice notice--success" style={{ marginBottom: 16 }}><Icon name="check" size={16} />{errorMessage(notice)}</div>}
 
       {loadingOne && !issue ? (
         <div className="skeleton" aria-busy="true" aria-label={t('common.loading')}><i /><i /></div>
       ) : !issue ? (
-        <div className="sheet"><div className="empty"><Icon name="alert" size={36} /><h3>{t('issue.notFound')}</h3><p>{error ?? t('issue.notFoundText')}</p></div></div>
+        <div className="sheet"><div className="empty"><Icon name="alert" size={36} /><h3>{t('issue.notFound')}</h3><p>{error ? errorMessage(error) : t('issue.notFoundText')}</p></div></div>
       ) : (
         <>
           <div className="page__head">
@@ -64,12 +65,13 @@ export function IssueDetailsPage() {
                 <h2>{t('issue.next')}</h2>
                 <p className="muted">{t(`issue.next.${issue.status}`)}</p>
               </section>
+              {token && <div className="panel"><TechnicianComments key={issue.id} token={token} issueId={issue.id} reporter /></div>}
             </div>
             <aside className="panel">
               <h2>{t('issue.onStrip')}</h2>
               <dl className="facts">
                 <div><dt>{t('issue.location')}</dt><dd>{issue.location}</dd></div>
-                <div><dt>{t('issue.category')}</dt><dd>{categoryName}</dd></div>
+                <div><dt>{t('issue.category')}</dt><dd>{category(categoryName)}</dd></div>
                 <div><dt>{t('issue.priority')}</dt><dd className={`priority-word priority-word--${issue.priority}`}>{t(`priority.${issue.priority}`)}</dd></div>
                 <div><dt>{t('issue.technician')}</dt><dd>{issue.technicianId ? t('issue.assignedYes') : t('issue.notYet')}</dd></div>
                 <div><dt>{t('issue.reported')}</dt><dd>{formatDate(issue.createdAt, locale, true)}</dd></div>

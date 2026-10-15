@@ -1,7 +1,7 @@
 import mongoose, { isValidObjectId } from 'mongoose'
 import { Comment, Issue, IssueStatusHistory } from '../models/index.js'
 import { createNotification } from './notification.service.js'
-import { emitToUser } from '../sockets/emitter.js'
+import { emitToAdmins, emitToUser } from '../sockets/emitter.js'
 
 type TechnicianIssueData = {
     id: string
@@ -290,6 +290,8 @@ export async function createTechnicianIssueComment(technicianId: string, issueId
     }
 
     const data = savedComment.toJSON() as unknown as TechnicianCommentData
+
+    emitToAdmins('comment:added', { issueId })
 
     // Refresh the technician's connected clients
     emitToUser(technicianId, 'comment:added', {

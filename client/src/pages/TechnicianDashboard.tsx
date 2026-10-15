@@ -8,7 +8,7 @@ import { useT } from '../i18n'
 
 export function TechnicianDashboard() {
     const dispatch = useDispatch<AppDispatch>()
-    const { t } = useT()
+    const { t, errorMessage } = useT()
     const [showDone, setShowDone] = useState(false)
 
     const token = useSelector((state: RootState) => state.auth.token)
@@ -43,9 +43,11 @@ export function TechnicianDashboard() {
                 </div>
             </div>
 
-            {error && (
+            <div className="overview"><div className="overview__item"><span>{t('overview.total')}</span><strong>{loading ? '—' : issues.length}</strong></div><div className="overview__item"><span>{t('overview.active')}</span><strong>{loading ? '—' : active.length}</strong></div><div className="overview__item"><span>{t('overview.closed')}</span><strong>{loading ? '—' : done.length}</strong></div></div>
+
+      {error && (
                 <div className="notice notice--error" role="alert" style={{ marginBottom: 16 }}>
-                    <Icon name="alert" size={16} />{error}
+                    <Icon name="alert" size={16} />{errorMessage(error)}
                 </div>
             )}
 

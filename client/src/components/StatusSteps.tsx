@@ -1,6 +1,6 @@
 import type { IssueStatus } from '../types'
 import { useT } from '../i18n'
-import type { TranslationKey } from '../i18n/en'
+import type { TranslationKey } from '../i18n/ar'
 import { Icon } from './Icon'
 
 const order: IssueStatus[] = ['open', 'assigned', 'in_progress', 'completed']

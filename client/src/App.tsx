@@ -3,7 +3,7 @@ import { AppLayout } from './components/AppLayout'
 import { RequireAuth } from './components/RequireAuth'
 import { useRealtimeSocket } from './features/notifications/useRealtimeSocket'
 import { AdminBoard } from './pages/AdminBoard'
-import { AdminList } from './pages/AdminList'
+import { AdminList, AdminIssueDetails } from './pages/AdminList'
 import { AdminStatistics } from './pages/AdminStatistics'
 import { AdminUsers } from './pages/AdminUsers'
 import { CreateIssuePage } from './pages/CreateIssuePage'
@@ -41,6 +41,7 @@ export default function App() {
             <Route element={<RequireAuth roles={['admin']} />}>
               <Route path="/admin" element={<AdminBoard />} />
               <Route path="/admin/issues" element={<AdminList />} />
+              <Route path="/admin/issues/:id" element={<AdminIssueDetails />} />
               <Route path="/admin/users" element={<AdminUsers />} />
               <Route path="/admin/statistics" element={<AdminStatistics />} />
             </Route>

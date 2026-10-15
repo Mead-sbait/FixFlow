@@ -5,7 +5,7 @@ import { logout } from '../features/auth/authSlice'
 import { NotificationsCenter } from '../features/notifications/components/NotificationsCenter'
 import { useT } from '../i18n'
 import { LanguageSwitch } from '../i18n/I18nProvider'
-import type { TranslationKey } from '../i18n/en'
+import type { TranslationKey } from '../i18n/ar'
 import { homeFor } from '../lib/roles'
 import { Icon } from './Icon'
 
@@ -27,7 +27,7 @@ const navByRole: Record<'user' | 'technician' | 'admin', NavItem[]> = {
   ]
 }
 
-// the aluminium frame around the board: brand, role tabs, bell, who is signed in
+// Shared navigation respects the active role and reading direction.
 export function AppLayout() {
   const dispatch = useDispatch<AppDispatch>()
   const navigate = useNavigate()
@@ -42,9 +42,11 @@ export function AppLayout() {
 
   return (
     <>
+      <div className="ambient ambient--workspace" aria-hidden="true"><i /><i /><Icon name="wrench" size={72} /><Icon name="board" size={52} /><Icon name="clock" size={60} /><Icon name="check" size={48} /></div>
+      <a className="skip-link" href="#workspace">{t('common.skip')}</a>
       <header className="frame">
         <Link className="frame__brand" to={homeFor(user?.role)} aria-label={t('nav.home')}>
-          <span className="frame__brand-mark"><Icon name="pin" size={16} /></span>
+          <span className="frame__brand-mark"><Icon name="wrench" size={20} /></span>
           <span>{t('app.name')}</span>
         </Link>
 
@@ -75,7 +77,7 @@ export function AppLayout() {
         )}
       </header>
 
-      <Outlet />
+      <div id="workspace" tabIndex={-1}><Outlet /></div>
     </>
   )
 }

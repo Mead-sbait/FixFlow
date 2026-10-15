@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express'
-import { createIssueSchema } from '../validators/issue.validator.js'
-import { createIssue, getUserIssues, getUserIssueById } from '../services/issue.service.js'
+import { createIssueSchema, createUserCommentSchema } from '../validators/issue.validator.js'
+import { createUserIssueComment, createIssue, getUserIssues, getUserIssueById, getUserIssueComments } from '../services/issue.service.js'
 
 export async function createUserIssue(req: Request, res: Response) {
   const reporterId = res.locals.auth?.userId
@@ -79,4 +79,34 @@ export async function getUserIssue(req: Request<{ id: string }>, res: Response) 
   } catch {
     res.status(500).json({ error: 'Unable to load issue', code: 'INTERNAL_ERROR' })
   }
+}
+
+export async function listUserIssueComments(req: Request<{ id: string }>, res: Response) {
+  const reporterId = res.locals.auth?.userId
+  if (!reporterId) {
+    res.status(401).json({ error: 'Authentication required', code: 'UNAUTHORIZED' })
+    return
+  }
+  try {
+    const comments = await getUserIssueComments(reporterId, req.params.id)
+    if (comments === null) {
+      res.status(404).json({ error: 'Issue not found', code: 'NOT_FOUND' })
+      return
+    }
+    res.status(200).json(comments)
+  } catch {
+    res.status(500).json({ error: 'Unable to load comments', code: 'INTERNAL_ERROR' })
+  }
+}
+
+export async function addUserIssueComment(req: Request<{ id: string }>, res: Response) {
+  const reporterId = res.locals.auth?.userId
+  if (!reporterId) { res.status(401).json({ error: 'Authentication required', code: 'UNAUTHORIZED' }); return }
+  const validation = createUserCommentSchema.safeParse(req.body)
+  if (!validation.success) { res.status(400).json({ error: 'Invalid comment data', code: 'VALIDATION_ERROR' }); return }
+  try {
+    const comment = await createUserIssueComment(reporterId, req.params.id, validation.data.message)
+    if (!comment) { res.status(404).json({ error: 'Issue not found', code: 'NOT_FOUND' }); return }
+    res.status(201).json(comment)
+  } catch { res.status(500).json({ error: 'Unable to add comment', code: 'INTERNAL_ERROR' }) }
 }

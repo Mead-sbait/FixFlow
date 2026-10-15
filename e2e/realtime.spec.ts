@@ -10,7 +10,7 @@ test.describe('live updates', () => {
     const admin = await adminSession(request)
     const reporter = await registerUser(request, 'Live Reporter')
 
-    await signIn(page, admin, '/admin')
+    await signIn(page, admin, '/admin', 'ar')
     await expect(page.locator('.column[data-column="unassigned"]')).toBeVisible()
 
     const title = `Live issue ${Date.now()}`
@@ -26,11 +26,11 @@ test.describe('live updates', () => {
     const title = `Live job ${Date.now()}`
     const issue = await createIssue(request, reporter.session, title)
 
-    await signIn(page, tech.session, '/technician')
-    await expect(page.getByText('Your column is empty')).toBeVisible()
+    await signIn(page, tech.session, '/technician', 'ar')
+    await expect(page.getByText("لا مهام بانتظارك")).toBeVisible()
 
     await assignIssue(request, issue.id, tech.session.user.id)
     await expect(page.getByRole('link', { name: new RegExp(title) })).toBeVisible({ timeout: 10_000 })
-    await expect(page.getByRole('button', { name: /Notifications, 1 unread/ })).toBeVisible({ timeout: 10_000 })
+    await expect(page.getByRole('button', { name: /الإشعارات، 1 غير مقروءة/ })).toBeVisible({ timeout: 10_000 })
   })
 })

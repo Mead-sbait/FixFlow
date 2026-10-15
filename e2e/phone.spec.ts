@@ -14,13 +14,13 @@ test.describe('on a phone', () => {
       await expectNoHorizontalScroll(page)
     }
 
-    await signIn(page, reporter.session, '/dashboard')
+    await signIn(page, reporter.session, '/dashboard', 'ar')
     await expectNoHorizontalScroll(page)
     await page.goto('/issues/new')
     await expectNoHorizontalScroll(page)
 
     for (const path of ['/admin', '/admin/issues', '/admin/users', '/admin/statistics']) {
-      await signIn(page, admin, path)
+      await signIn(page, admin, path, 'ar')
       await expect(page.locator('main')).toBeVisible()
       await expectNoHorizontalScroll(page)
     }
@@ -44,11 +44,11 @@ test.describe('on a phone', () => {
 
   test('the notifications panel opens and closes on a phone', async ({ page, request }) => {
     const admin = await adminSession(request)
-    await signIn(page, admin, '/admin')
-    await page.getByRole('button', { name: /Notifications/ }).click()
-    const panel = page.getByRole('dialog', { name: 'Notifications' })
+    await signIn(page, admin, '/admin', 'ar')
+    await page.getByRole('button', { name: /الإشعارات/ }).click()
+    const panel = page.getByRole('dialog', { name: "الإشعارات" })
     await expect(panel).toBeVisible()
-    await page.getByRole('button', { name: 'Close' }).click()
+    await page.getByRole('button', { name: "إغلاق" }).click()
     await expect(panel).toHaveCount(0)
   })
 })

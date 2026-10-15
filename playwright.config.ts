@@ -23,7 +23,9 @@ process.env.E2E_API ??= 'http://localhost:3000/api'
 
 export default defineConfig({
   testDir: 'e2e',
-  globalTeardown: './e2e/global-teardown.ts',
+  globalTeardown: process.env.E2E_UI_ONLY === '1' ? undefined : './e2e/global-teardown.ts',
+  testMatch: process.env.E2E_UI_ONLY === '1' ? '**/ui.spec.ts' : '**/*.spec.ts',
+  testIgnore: process.env.E2E_UI_ONLY === '1' ? undefined : '**/ui.spec.ts',
   timeout: 30_000,
   expect: { timeout: 8_000 },
   // one worker: the tests share one database and one socket server, and parallel runs
@@ -34,7 +36,7 @@ export default defineConfig({
   retries: 1,
   reporter: process.env.CI ? 'github' : 'list',
   use: {
-    baseURL: 'http://localhost:5173',
+    baseURL: process.env.E2E_UI_ONLY === '1' ? 'http://127.0.0.1:5174' : 'http://localhost:5173',
     // uses the Chrome already installed on the machine, so there is nothing to download
     channel: 'chrome',
     trace: 'retain-on-failure',
@@ -42,9 +44,10 @@ export default defineConfig({
   },
   // the client and the API (with MongoDB) must be running: `npm run dev` in another terminal
   webServer: {
-    command: 'npm run dev --prefix client',
-    url: 'http://localhost:5173',
-    reuseExistingServer: true,
+    command: process.env.E2E_UI_ONLY === '1' ? 'node client/node_modules/vite/bin/vite.js client --host 127.0.0.1 --port 5174 --strictPort' : 'npm run dev --prefix client',
+    url: process.env.E2E_UI_ONLY === '1' ? 'http://127.0.0.1:5174' : 'http://localhost:5173',
+    env: { VITE_E2E_UI_ONLY: process.env.E2E_UI_ONLY === '1' ? '1' : '0' },
+    reuseExistingServer: !process.env.CI,
     timeout: 60_000,
   },
 })
