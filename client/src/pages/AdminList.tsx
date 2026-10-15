@@ -195,7 +195,7 @@ function AdminIssueDetailsContent() {
       {confirmError && <div className="notice notice--error" role="alert">{t('issue.closeFailed')}</div>}
       <div className="confirm-dialog__actions">
         <button type="button" className="btn btn--secondary" autoFocus disabled={saving} onClick={() => setConfirmOpen(false)}>{t('common.cancel')}</button>
-        <button type="button" className="btn btn--primary" disabled={saving} onClick={() => void changeStatus()}>{saving ? t('common.loading') : t(closed ? 'board.reopen' : 'issue.close')}</button>
+        <button type="button" className="btn btn--primary" disabled={saving} onClick={() => void changeStatus()}>{saving ? t('common.loading') : t(confirmAction === 'open' ? 'board.reopen' : 'issue.close')}</button>
       </div>
     </dialog>
   </main>

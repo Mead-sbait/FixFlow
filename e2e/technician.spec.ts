@@ -13,7 +13,7 @@ test.describe('the technician column', () => {
     const issue = await createIssue(request, reporter.session, title)
     await assignIssue(request, issue.id, tech.session.user.id)
 
-    await signIn(page, tech.session, '/technician')
+    await signIn(page, tech.session, '/technician', 'ar')
     await expect(page.getByRole('heading', { level: 1 })).toContainText("مهام Working")
     await page.getByRole('link', { name: new RegExp(title) }).click()
     await expect(page).toHaveURL(new RegExp(`/technician/issues/${issue.id}$`))
@@ -42,7 +42,7 @@ test.describe('the technician column', () => {
     const issue = await createIssue(request, reporter.session, `Not yours ${Date.now()}`)
     await assignIssue(request, issue.id, otherTech.session.user.id)
 
-    await signIn(page, tech.session, `/technician/issues/${issue.id}`)
+    await signIn(page, tech.session, `/technician/issues/${issue.id}`, 'ar')
     await expect(page.getByText("البلاغ غير موجود")).toBeVisible()
   })
 
@@ -53,7 +53,7 @@ test.describe('the technician column', () => {
     const issue = await createIssue(request, reporter.session, title)
     await assignIssue(request, issue.id, tech.session.user.id)
 
-    await signIn(page, reporter.session, `/issues/${issue.id}`)
+    await signIn(page, reporter.session, `/issues/${issue.id}`, 'ar')
     await expect(page.locator('.tag--assigned')).toBeVisible()
     await expect(page.getByRole('list', { name: "الحالة" }).locator('.now')).toContainText("مُسند")
 

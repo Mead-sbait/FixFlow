@@ -1,28 +1,33 @@
 import { describe, expect, it, vi, afterEach } from 'vitest'
 import { ar } from './ar'
+import { en } from './en'
 import { he } from './he'
 import { categoryText, localizedError, notificationText, dirFor, initialLang, isLang, languages, translate } from './index'
 
 afterEach(() => vi.unstubAllGlobals())
-describe('Arabic and Hebrew interface', () => {
+describe('English, Arabic and Hebrew interface', () => {
   it('has complete translations with matching placeholders', () => {
+    expect(Object.keys(en).sort()).toEqual(Object.keys(ar).sort())
     expect(Object.keys(he).sort()).toEqual(Object.keys(ar).sort())
     const holes = (text: string) => (text.match(/\{\w+\}/g) ?? []).sort()
     for (const key of Object.keys(ar) as (keyof typeof ar)[]) {
+      expect(en[key].trim(), key).not.toBe('')
+      expect(holes(en[key]), key).toEqual(holes(ar[key]))
       expect(he[key].trim(), key).not.toBe('')
       expect(holes(he[key]), key).toEqual(holes(ar[key]))
     }
   })
-  it('only offers the two supported right-to-left languages', () => {
-    expect(languages.map(item => item.code).sort()).toEqual(['ar', 'he'])
-    expect(isLang('en')).toBe(false)
+  it('offers all three languages with their correct directions', () => {
+    expect(languages.map(item => item.code).sort()).toEqual(['ar', 'en', 'he'])
+    expect(isLang('en')).toBe(true)
+    expect(dirFor('en')).toBe('ltr')
     expect(dirFor('ar')).toBe('rtl')
     expect(dirFor('he')).toBe('rtl')
   })
-  it('replaces a saved English preference with the Arabic default', () => {
+  it('keeps a saved English preference', () => {
     vi.stubGlobal('localStorage', { getItem: () => 'en' })
     vi.stubGlobal('navigator', { language: 'en-US' })
-    expect(initialLang()).toBe('ar')
+    expect(initialLang()).toBe('en')
   })
   it('keeps a saved supported preference', () => {
     vi.stubGlobal('localStorage', { getItem: () => 'he' })

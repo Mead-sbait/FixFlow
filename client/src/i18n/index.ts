@@ -1,23 +1,25 @@
 import { createContext, useContext } from 'react'
 import { ar, type TranslationKey } from './ar'
+import { en } from './en'
 import { he } from './he'
 
-export type Lang = 'he' | 'ar'
+export type Lang = 'en' | 'he' | 'ar'
 
-const dictionaries: Record<Lang, Record<TranslationKey, string>> = { he, ar }
+const dictionaries: Record<Lang, Record<TranslationKey, string>> = { en, he, ar }
 export const LANG_STORAGE_KEY = 'fixflow.lang'
 
 export const languages: { code: Lang; label: string; locale: string }[] = [
+  { code: 'en', label: 'English', locale: 'en-US' },
   { code: 'he', label: 'עברית', locale: 'he-IL' },
   { code: 'ar', label: 'العربية', locale: 'ar' }
 ]
 
 export function isLang(value: unknown): value is Lang {
-  return value === 'he' || value === 'ar'
+  return value === 'en' || value === 'he' || value === 'ar'
 }
 
-export function dirFor(lang: Lang): 'rtl' {
-  const directions = { ar: 'rtl', he: 'rtl' } as const
+export function dirFor(lang: Lang): 'rtl' | 'ltr' {
+  const directions = { ar: 'rtl', he: 'rtl', en: 'ltr' } as const
   return directions[lang]
 }
 
@@ -31,7 +33,7 @@ export function initialLang(): Lang {
   const browser = navigator.language?.toLowerCase() ?? ''
   if (browser.startsWith('he')) return 'he'
   if (browser.startsWith('ar')) return 'ar'
-  return 'ar'
+  return 'en'
 }
 
 // plain string replacement: t('common.by', { name: 'Nora' }) -> 'by Nora'
@@ -106,7 +108,7 @@ export function localizedError(lang: Lang, message: string) {
   if (message.startsWith('Invalid ') || message.startsWith('A valid ')) return translate(lang, 'err.validation')
   if (message.startsWith('Cannot ')) return translate(lang, 'err.conflict')
   // Re-render an already displayed system message in the newly selected language.
-  for (const dictionary of [ar, he]) {
+  for (const dictionary of [ar, he, en]) {
     const entry = Object.entries(dictionary).find(([, text]) => text === message)
     if (entry) return translate(lang, entry[0] as TranslationKey)
   }

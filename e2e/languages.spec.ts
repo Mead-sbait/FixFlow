@@ -1,11 +1,13 @@
 import { expect, test } from '@playwright/test'
-import { adminSession, registerUser, signIn } from './helpers'
+import { adminSession, cleanupTechnicians, registerTechnician, registerUser, signIn } from './helpers'
 
-test('switches between Arabic and Hebrew and keeps the preference', async ({ page }) => {
+test('switches between English, Arabic and Hebrew and keeps the preference', async ({ page }) => {
   await page.goto('/login')
+  await expect(page.locator('html')).toHaveAttribute('dir', 'ltr')
+  await expect(page.getByRole('heading', { name: 'Sign in', exact: true })).toBeVisible()
+  await page.getByRole('button', { name: 'العربية' }).click()
   await expect(page.locator('html')).toHaveAttribute('dir', 'rtl')
   await expect(page.getByRole('heading', { name: 'تسجيل الدخول' })).toBeVisible()
-  await expect(page.getByRole('button', { name: 'English' })).toHaveCount(0)
   await page.getByRole('button', { name: 'עברית' }).click()
   await expect(page.getByRole('heading', { name: 'כניסה' })).toBeVisible()
   await page.reload()
@@ -14,7 +16,10 @@ test('switches between Arabic and Hebrew and keeps the preference', async ({ pag
   await expect(page.getByRole('heading', { name: 'تسجيل الدخول' })).toBeVisible()
 })
 
+test.afterAll(async ({ request }) => { await cleanupTechnicians(request) })
+
 test('the Hebrew board starts on the right', async ({ page, request }) => {
+  await registerTechnician(request, 'RTL Layout Tech')
   await signIn(page, await adminSession(request), '/admin', 'he')
   await expect(page.getByRole('heading', { name: 'לוח התחזוקה' })).toBeVisible()
   const box = await page.locator('.column').first().boundingBox()

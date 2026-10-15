@@ -6,7 +6,7 @@ test.describe('reporting an issue', () => {
     const { session } = await registerUser(request, 'Reporter One')
     const title = `Leaking tap ${Date.now()}`
 
-    await signIn(page, session, '/issues/new')
+    await signIn(page, session, '/issues/new', 'ar')
     await page.getByLabel("ما المشكلة؟").fill(title)
     await page.getByLabel("أين تقع؟").fill('Building A, floor 2')
     await page.getByRole('button', { name: /عاجلة/ }).click()
@@ -25,7 +25,7 @@ test.describe('reporting an issue', () => {
 
   test('the form refuses an empty report', async ({ page, request }) => {
     const { session } = await registerUser(request, 'Reporter Two')
-    await signIn(page, session, '/issues/new')
+    await signIn(page, session, '/issues/new', 'ar')
     await page.getByRole('button', { name: "إرسال البلاغ" }).click()
     await expect(page.getByText("مطلوب عنوان قصير.")).toBeVisible()
     await expect(page).toHaveURL(/\/issues\/new$/)
@@ -39,7 +39,7 @@ test.describe('reporting an issue', () => {
     const { createIssue } = await import('./helpers')
     const theirs = await createIssue(request, other.session, `Not mine ${Date.now()}`)
 
-    await signIn(page, mine.session, '/dashboard')
+    await signIn(page, mine.session, '/dashboard', 'ar')
     await expect(page.getByText("لم ترسل أي بلاغ بعد")).toBeVisible()
     await page.goto(`/issues/${theirs.id}`)
     await expect(page.getByRole('heading', { name: "البلاغ غير موجود" })).toBeVisible()

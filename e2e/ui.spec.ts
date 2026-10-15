@@ -1,5 +1,7 @@
+import type { store as AppStore } from '../client/src/app/store'
 import { expect, test, type Page } from '@playwright/test'
 import { ar } from '../client/src/i18n/ar'
+import { en } from '../client/src/i18n/en'
 import { he } from '../client/src/i18n/he'
 
 const id = '123456789012345678901234'
@@ -9,7 +11,7 @@ const issue = { id, title: 'تسرب مياه / נזילת מים', description:
 const notice = { id, type: 'issue_assigned', message: `You have been assigned to "${issue.title}"`, isRead: false, createdAt: issue.createdAt }
 const routes = ['/login', '/register', '/dashboard', '/issues/new', `/issues/${id}`, '/technician', `/technician/issues/${id}`, '/admin', '/admin/issues', `/admin/issues/${id}`, '/admin/users', '/admin/statistics']
 
-async function setup(page: Page, lang: 'ar' | 'he', path: string, empty = false) {
+async function setup(page: Page, lang: 'ar' | 'he' | 'en', path: string, empty = false) {
   const role = path.startsWith('/admin') ? 'admin' : path.startsWith('/technician') ? 'technician' : 'user'
   await page.addInitScript(({ lang, role, person, auth }) => {
     localStorage.setItem('fixflow.lang', lang)
@@ -38,16 +40,16 @@ async function setup(page: Page, lang: 'ar' | 'he', path: string, empty = false)
   await page.evaluate(() => document.fonts.ready)
 }
 
-for (const lang of ['ar', 'he'] as const) {
+for (const lang of ['ar', 'he', 'en'] as const) {
   for (const width of [320, 390, 1440]) {
     for (const path of routes) {
       test(`${lang} ${width}px ${path}`, async ({ page }) => {
         await page.setViewportSize({ width, height: 900 })
         await setup(page, lang, path)
-        await expect(page.locator('html')).toHaveAttribute('dir', 'rtl')
+        await expect(page.locator('html')).toHaveAttribute('dir', lang === 'en' ? 'ltr' : 'rtl')
         if (lang === 'ar' && width === 390 && ['/admin', '/dashboard'].includes(path)) await page.screenshot({ path: `work/${path.slice(1)}-phone.png`, fullPage: true })
         expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width + 1)
-        await expect(page.getByRole('button', { name: 'English' })).toHaveCount(0)
+        await expect(page.getByRole('button', { name: 'English', exact: true })).toBeVisible()
         if (path === '/login' || path === '/register') {
           const input = page.locator('input[autocomplete$="password"]')
           const toggle = page.locator('.password-control button')
@@ -64,7 +66,7 @@ for (const lang of ['ar', 'he'] as const) {
     }
   }
   test(`${lang}: notifications, category and error messages follow language changes`, async ({ page }) => {
-    const dict = lang === 'ar' ? ar : he
+    const dict = lang === 'ar' ? ar : lang === 'he' ? he : en
     await setup(page, lang, '/dashboard')
     await expect(page.getByText(dict['category.electrical'], { exact: true })).toBeVisible()
     await page.locator('.notif > button').click()
@@ -80,7 +82,7 @@ for (const lang of ['ar', 'he'] as const) {
   test(`${lang}: empty dashboard and reduced motion`, async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' })
     await setup(page, lang, '/dashboard', true)
-    await expect(page.locator('.empty h3')).toHaveText((lang === 'ar' ? ar : he)['mine.emptyTitle'])
+    await expect(page.locator('.empty h3')).toHaveText((lang === 'ar' ? ar : lang === 'he' ? he : en)['mine.emptyTitle'])
     expect(await page.locator('.ambient i').first().evaluate(el => getComputedStyle(el).animationName)).toBe('none')
   })
 }
@@ -131,7 +133,7 @@ test('registration validation blocks malformed email and short password', async 
   await expect(page).toHaveURL(/\/register$/)
 })
 
-for (const lang of ['ar', 'he'] as const) {
+for (const lang of ['ar', 'he', 'en'] as const) {
   test(`${lang}: assignment selector follows drag and reassignment`, async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 1000 })
     await setup(page, lang, '/admin')
@@ -150,7 +152,7 @@ for (const lang of ['ar', 'he'] as const) {
     await expect(source).toBeVisible()
     await source.dragTo(destination.locator('.column__body'))
     await expect(destination.locator('.strip')).toBeVisible()
-    const label = (lang === 'ar' ? ar : he)['board.moveLabel'].replace('{title}', issue.title)
+    const label = (lang === 'ar' ? ar : lang === 'he' ? he : en)['board.moveLabel'].replace('{title}', issue.title)
     await expect(destination.getByLabel(label)).toHaveValue(person.id)
     await expect(destination.getByLabel(label).locator('option:checked')).toHaveText(person.name)
     await destination.getByLabel(label).selectOption(second.id)
@@ -174,17 +176,16 @@ test('the reporter reads public comments and receives comment refreshes', async 
   comments = [...comments, { ...comment, id: 'second', message: 'وصلت القطعة وتم إصلاح العطل' }]
   // Exercise the same Redux event dispatched by the Socket.IO comment:added listener.
   await page.evaluate(async issueId => {
-    const storeUrl = performance.getEntriesByType('resource').map(entry => entry.name).find(url => new URL(url).pathname === '/src/app/store.ts')!
-    const { store } = await import(storeUrl)
+    const store = (window as Window & { __FIXFLOW_TEST_STORE__: typeof AppStore }).__FIXFLOW_TEST_STORE__
     store.dispatch({ type: 'technician/commentEventReceived', payload: issueId })
   }, id)
   await expect(page.getByText('وصلت القطعة وتم إصلاح العطل')).toBeVisible()
   await expect(page.getByText('ملاحظة داخلية سرية')).toHaveCount(0)
 })
 
-for (const lang of ['ar', 'he'] as const) {
+for (const lang of ['ar', 'he', 'en'] as const) {
   test(`${lang}: reporter submits own public comment`, async ({ page }) => {
-    const dict = lang === 'ar' ? ar : he
+    const dict = lang === 'ar' ? ar : lang === 'he' ? he : en
     await setup(page, lang, `/issues/${id}`)
     let body: unknown
     await page.route('**/api/issues/*/comments', async route => {
@@ -203,7 +204,7 @@ for (const lang of ['ar', 'he'] as const) {
   })
   test(`${lang}: admin reads comments and closes issue without commenting`, async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 })
-    const dict = lang === 'ar' ? ar : he
+    const dict = lang === 'ar' ? ar : lang === 'he' ? he : en
     await setup(page, lang, '/admin/issues')
     await page.route('**/api/admin/issues/*/comments', route => route.fulfill({ json: [{ id: 'comment', issueId: id, author: { ...person, role: 'user' }, message: 'يرجى المتابعة', isInternal: false, createdAt: issue.createdAt }] }))
     await page.getByRole('link', { name: issue.title }).click()
@@ -253,8 +254,7 @@ test('admin comment view refreshes after reconnect invalidation', async ({ page 
   await setup(page, 'ar', `/admin/issues/${id}`)
   await page.route('**/api/admin/issues/*/comments', route => route.fulfill({ json: [{ id: 'reconnected', issueId: id, author: { ...person, role: 'user' }, message: 'تعليق أثناء انقطاع الاتصال', isInternal: false, createdAt: issue.createdAt }] }))
   await page.evaluate(async () => {
-    const storeUrl = performance.getEntriesByType('resource').map(entry => entry.name).find(url => new URL(url).pathname === '/src/app/store.ts')!
-    const { store } = await import(storeUrl)
+    const store = (window as Window & { __FIXFLOW_TEST_STORE__: typeof AppStore }).__FIXFLOW_TEST_STORE__
     store.dispatch({ type: 'technician/commentEventReceived', payload: '*' })
   })
   await expect(page.getByText('تعليق أثناء انقطاع الاتصال')).toBeVisible()
@@ -266,8 +266,7 @@ test('an open confirmation keeps its original action when the issue changes remo
   await page.getByRole('button', { name: ar['issue.close'], exact: true }).click()
   await page.route('**/api/admin/issues/' + id, route => route.fulfill({ json: { ...issue, status: 'completed' } }))
   await page.evaluate(async () => {
-    const storeUrl = performance.getEntriesByType('resource').map(entry => entry.name).find(url => new URL(url).pathname === '/src/app/store.ts')!
-    const { store } = await import(storeUrl)
+    const store = (window as Window & { __FIXFLOW_TEST_STORE__: typeof AppStore }).__FIXFLOW_TEST_STORE__
     const state = store.getState()
     store.dispatch({ type: 'admin/fetchIssues/pending', meta: { requestId: 'remote-test' } })
     store.dispatch({ type: 'admin/fetchIssues/fulfilled', meta: { requestId: 'remote-test' }, payload: { items: [...state.admin.issues], pagination: state.admin.pagination } })
@@ -298,8 +297,7 @@ test('a delayed comments read cannot erase a newly submitted reply', async ({ pa
     return route.fulfill({ json: [] })
   })
   await page.evaluate(async () => {
-    const storeUrl = performance.getEntriesByType('resource').map(entry => entry.name).find(url => new URL(url).pathname === '/src/app/store.ts')!
-    const { store } = await import(storeUrl)
+    const store = (window as Window & { __FIXFLOW_TEST_STORE__: typeof AppStore }).__FIXFLOW_TEST_STORE__
     store.dispatch({ type: 'technician/commentEventReceived', payload: '*' })
   })
   await started
@@ -312,3 +310,27 @@ test('a delayed comments read cannot erase a newly submitted reply', async ({ pa
   await expect(page.locator('.loading')).toHaveCount(0)
   await expect(page.getByText('رد جديد محفوظ', { exact: true })).toBeVisible()
 })
+
+for (const lang of ['ar', 'he', 'en'] as const) {
+  test(`${lang}: local fonts load without external font services`, async ({ page }) => {
+    const external: string[] = []
+    await page.route(url => ['fonts.googleapis.com', 'fonts.gstatic.com'].includes(url.hostname), route => { external.push(route.request().url()); return route.abort() })
+    await setup(page, lang, '/login')
+    const loaded = await page.evaluate(async lang => {
+      const family = lang === 'ar' ? 'Cairo' : 'Assistant'
+      const text = lang === 'ar' ? 'مرحبا' : lang === 'he' ? 'שלום' : 'Hello'
+      const faces = await document.fonts.load('400 16px ' + family, text)
+      return faces.length > 0 && faces.every(face => face.status === 'loaded')
+    }, lang)
+    expect(loaded).toBe(true)
+    expect(external).toEqual([])
+  })
+}
+for (const [browserLanguage, expected] of [['en-US', 'en'], ['ar', 'ar'], ['he-IL', 'he'], ['fr-FR', 'en']] as const) {
+  test(`browser language ${browserLanguage} selects ${expected}`, async ({ page }) => {
+    await page.addInitScript(language => { localStorage.clear(); Object.defineProperty(navigator, 'language', { value: language }) }, browserLanguage)
+    await page.goto('/login')
+    await expect(page.locator('html')).toHaveAttribute('lang', expected)
+    await expect(page.locator('html')).toHaveAttribute('dir', expected === 'en' ? 'ltr' : 'rtl')
+  })
+}

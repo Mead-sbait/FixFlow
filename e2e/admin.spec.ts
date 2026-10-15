@@ -13,7 +13,7 @@ test.describe('the admin board', () => {
     const title = `Flickering light ${Date.now()}`
     await createIssue(request, reporter.session, title)
 
-    await signIn(page, admin, '/admin')
+    await signIn(page, admin, '/admin', 'ar')
     const unassigned = page.locator('.column[data-column="unassigned"]')
     const techColumn = page.locator(`.column[data-column="${tech.session.user.id}"]`)
     const strip = unassigned.locator('.strip', { hasText: title })
@@ -34,7 +34,7 @@ test.describe('the admin board', () => {
     const title = `Broken blind ${Date.now()}`
     await createIssue(request, reporter.session, title)
 
-    await signIn(page, admin, '/admin')
+    await signIn(page, admin, '/admin', 'ar')
     const strip = page.locator('.column[data-column="unassigned"] .strip', { hasText: title })
     const target = page.locator(`.column[data-column="${tech.session.user.id}"] .column__body`)
     await expect(strip).toBeVisible()
@@ -49,7 +49,7 @@ test.describe('the admin board', () => {
     const title = `Squeaky door ${Date.now()}`
     await createIssue(request, reporter.session, title)
 
-    await signIn(page, admin, '/admin/issues')
+    await signIn(page, admin, '/admin/issues', 'ar')
     await page.getByLabel("بحث في البلاغات").fill(title)
     await page.getByRole('button', { name: "بحث" }).click()
     const row = page.locator('tr', { hasText: title })
@@ -72,7 +72,7 @@ test.describe('the admin board', () => {
     const admin = await adminSession(request)
     const created = await registerUser(request, 'Promote Me')
 
-    await signIn(page, admin, '/admin/users')
+    await signIn(page, admin, '/admin/users', 'ar')
     await page.getByLabel("البحث عن مستخدم").fill(created.email)
     await page.getByRole('button', { name: "بحث" }).click()
     const row = page.locator('tr', { hasText: created.email })
@@ -86,7 +86,7 @@ test.describe('the admin board', () => {
 
   test('the tally page counts the board', async ({ page, request }) => {
     const admin = await adminSession(request)
-    await signIn(page, admin, '/admin/statistics')
+    await signIn(page, admin, '/admin/statistics', 'ar')
     await expect(page.getByRole('heading', { name: "حسب الحالة" })).toBeVisible()
     await expect(page.getByRole('heading', { name: "حسب الفئة" })).toBeVisible()
     await expect(page.locator('.bar').first()).toBeVisible()

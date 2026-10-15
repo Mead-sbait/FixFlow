@@ -104,7 +104,7 @@ export async function assignIssue(request: APIRequestContext, issueId: string, t
 }
 
 // puts a session into localStorage the same way the login page does, then opens a route
-export async function signIn(page: Page, session: Session, path = '/', lang = 'ar') {
+export async function signIn(page: Page, session: Session, path = '/', lang = 'en') {
   await page.goto('/login')
   await page.evaluate(([s, l]) => {
     localStorage.setItem('fixflow.session', JSON.stringify(s))

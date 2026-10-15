@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test'
 import { PASSWORD, adminSession, registerUser, signIn, uniqueEmail } from './helpers'
 
 test.describe('signing up and in', () => {
+  test.beforeEach(async ({ page }) => { await page.addInitScript(() => localStorage.setItem('fixflow.lang', 'ar')) })
   test('a visitor can register, sign in and lands on their board', async ({ page }) => {
     const email = uniqueEmail('visitor')
 
@@ -34,7 +35,7 @@ test.describe('signing up and in', () => {
 
   test('the session survives a reload and sign out clears it', async ({ page, request }) => {
     const { session } = await registerUser(request, 'Reload Me')
-    await signIn(page, session, '/dashboard')
+    await signIn(page, session, '/dashboard', 'ar')
     await page.reload()
     await expect(page).toHaveURL(/\/dashboard$/)
     await page.getByRole('button', { name: "تسجيل الخروج" }).click()
@@ -45,11 +46,11 @@ test.describe('signing up and in', () => {
 
   test('roles cannot open each other\'s pages', async ({ page, request }) => {
     const { session } = await registerUser(request, 'Just A User')
-    await signIn(page, session, '/admin')
+    await signIn(page, session, '/admin', 'ar')
     await expect(page).toHaveURL(/\/dashboard$/)
 
     const admin = await adminSession(request)
-    await signIn(page, admin, '/technician')
+    await signIn(page, admin, '/technician', 'ar')
     await expect(page).toHaveURL(/\/admin$/)
   })
 
